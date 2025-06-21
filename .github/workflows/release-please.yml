@@ -1,6 +1,6 @@
 name: release-please
 
-on:
+"on":
   push:
     branches:
       - main
