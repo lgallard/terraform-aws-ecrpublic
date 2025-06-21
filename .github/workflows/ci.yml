@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  terraform:
+    name: Terraform Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.7
+
+    - name: Terraform Format Check
+      run: terraform fmt -check -recursive
+
+    - name: Terraform Init and Validate - Main Module
+      run: |
+        terraform init -backend=false
+        terraform validate
+
+    - name: Terraform Init and Validate - Examples
+      run: |
+        cd examples/using_objects
+        terraform init -backend=false
+        terraform validate
+        cd ../using_variables
+        terraform init -backend=false
+        terraform validate
+
+  terratest:
+    name: Terratest
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.7
+
+    - name: Run Terratest
+      run: |
+        cd test
+        go mod tidy
+        go test -v -parallel 4

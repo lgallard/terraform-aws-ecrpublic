@@ -48,6 +48,59 @@ module "public-ecr" {
 }
 
 ```
+
+## Testing
+
+This module includes comprehensive automated testing using [Terratest](https://github.com/gruntwork-io/terratest) and GitHub Actions CI/CD.
+
+### Running Tests Locally
+
+Prerequisites:
+- [Terraform](https://www.terraform.io/downloads.html) >= 1.0
+- [Go](https://golang.org/dl/) >= 1.21
+
+Available commands:
+
+```bash
+# Check terraform formatting
+make fmt-check
+
+# Validate terraform configuration
+make validate
+
+# Run terratest tests
+make test
+
+# Run all checks (recommended)
+make check
+
+# Format terraform files
+make fmt
+
+# Clean up test artifacts
+make clean
+```
+
+### Test Coverage
+
+The test suite includes:
+
+- **Terraform Format Check**: Ensures all Terraform files are properly formatted
+- **Terraform Validation**: Validates the main module configuration
+- **Examples Validation**: Tests both `using_objects` and `using_variables` examples
+- **Examples Format Check**: Ensures example code is properly formatted
+
+### Continuous Integration
+
+This repository includes a GitHub Actions workflow that automatically:
+
+- Runs on all pull requests and pushes to main
+- Checks Terraform formatting with `terraform fmt -check`
+- Validates all Terraform configurations
+- Executes the complete Terratest suite
+
+All tests must pass before code can be merged.
+
 ## Requirements
 
 No requirements.

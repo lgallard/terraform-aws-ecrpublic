@@ -50,7 +50,7 @@ variable "catalog_data_usage_text" {
 # Timeouts
 variable "timeouts" {
   description = "Timeouts map."
-  type        = map
+  type        = map(any)
   default     = {}
 }
 

@@ -1,6 +1,6 @@
 module "public-ecr" {
 
-  source = "lgallard/ecrpublic/aws"
+  source = "../.."
 
   repository_name = "lgallard-public-repo"
 
