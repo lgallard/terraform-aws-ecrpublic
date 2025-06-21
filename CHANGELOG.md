@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.2.0...0.3.0) (2025-06-21)
+
+
+### Features
+
+* Set up automated testing and CI/CD integration ([#8](https://github.com/lgallard/terraform-aws-ecrpublic/issues/8)) ([50c5f90](https://github.com/lgallard/terraform-aws-ecrpublic/commit/50c5f90ce1ab7d4f345668c76de5381e60743362))
+
 ## [0.2.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.1.0...0.2.0) (2025-06-21)
 
 
