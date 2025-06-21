@@ -50,7 +50,8 @@ func TestTerraformECRPublicIntegration(t *testing.T) {
 	assert.Equal(t, repositoryName, actualRepositoryName)
 
 	// Check if repository exists using AWS CLI/SDK
-	session := aws.NewAuthenticatedSession(awsRegion)
+	session, err := aws.NewAuthenticatedSession(awsRegion)
+	assert.NoError(t, err, "Should be able to create AWS session")
 	
 	// Note: We can't easily verify ECR Public repositories exist via AWS SDK 
 	// since the ECR Public APIs are different from regular ECR
