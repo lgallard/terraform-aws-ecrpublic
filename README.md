@@ -48,6 +48,81 @@ module "public-ecr" {
 }
 
 ```
+
+## Testing
+
+This module includes comprehensive automated testing using [Terratest](https://github.com/gruntwork-io/terratest) and GitHub Actions CI/CD.
+
+### Running Tests Locally
+
+Prerequisites:
+- [Terraform](https://www.terraform.io/downloads.html) >= 1.0
+- [Go](https://golang.org/dl/) >= 1.21
+
+Available commands:
+
+```bash
+# Check terraform formatting
+make fmt-check
+
+# Validate terraform configuration
+make validate
+
+# Run static tests (format check, validation, syntax tests)
+make test
+
+# Run integration tests (creates real AWS resources - requires AWS credentials)
+make test-integration
+
+# Run all static checks (recommended for development)
+make check
+
+# Run all checks including integration tests
+make check-all
+
+# Format terraform files
+make fmt
+
+# Clean up test artifacts
+make clean
+```
+
+### Test Coverage
+
+The test suite includes:
+
+**Static Tests (No AWS resources created):**
+- **Terraform Format Check**: Ensures all Terraform files are properly formatted
+- **Terraform Validation**: Validates the main module configuration
+- **Examples Validation**: Tests both `using_objects` and `using_variables` examples
+- **Examples Format Check**: Ensures example code is properly formatted
+
+**Integration Tests (Creates real AWS resources):**
+- **ECR Public Repository Creation**: Tests actual repository creation and configuration
+- **Catalog Data Integration**: Verifies repository metadata and catalog information
+- **Example Deployment**: Tests real-world usage scenarios
+- **Resource Cleanup**: Ensures proper cleanup after testing
+
+⚠️ **Note**: Integration tests create real AWS ECR Public repositories and may incur costs. Ensure you have:
+- Valid AWS credentials configured
+- Appropriate permissions for ECR Public operations
+- Access to the `us-east-1` region (required for ECR Public)
+
+### Continuous Integration
+
+This repository includes a GitHub Actions workflow that automatically:
+
+- **Static Tests**: Run on all pull requests and pushes
+  - Checks Terraform formatting with `terraform fmt -check`
+  - Validates all Terraform configurations
+  - Executes static Terratest validation
+- **Integration Tests**: Run on main branch pushes or manual dispatch
+  - Creates and tests real ECR Public repositories
+  - Requires AWS credentials to be configured as GitHub secrets
+  - Automatically cleans up resources after testing
+
+All static tests must pass before code can be merged. Integration tests provide additional confidence for production deployments.
+
 ## Requirements
 
 No requirements.
