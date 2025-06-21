@@ -5,6 +5,13 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      run_integration_tests:
+        description: 'Run integration tests (requires AWS credentials)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   terraform:
@@ -38,7 +45,7 @@ jobs:
         terraform validate
 
   terratest:
-    name: Terratest
+    name: Terratest Static Tests
     runs-on: ubuntu-latest
     
     steps:
@@ -55,8 +62,44 @@ jobs:
       with:
         terraform_version: 1.5.7
 
-    - name: Run Terratest
+    - name: Run Static Terratest
       run: |
         cd test
         go mod tidy
-        go test -v -parallel 4
+        go test -v -run "TestTerraformValidate|TestTerraformFormat|TestExamplesValidate|TestExamplesFormat" -parallel 4
+
+  integration_tests:
+    name: Integration Tests (AWS)
+    runs-on: ubuntu-latest
+    # Only run integration tests on main branch pushes or manual workflow dispatch
+    if: github.ref == 'refs/heads/main' || github.event.inputs.run_integration_tests == 'true'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.7
+        terraform_wrapper: false
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Run Integration Tests
+      run: |
+        cd test
+        go mod tidy
+        go test -v -run "TestTerraformECRPublic" -timeout 30m
+      env:
+        AWS_DEFAULT_REGION: us-east-1
