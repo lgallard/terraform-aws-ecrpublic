@@ -148,8 +148,6 @@ jobs:
             fi
           fi
 
-
-
       - name: Run Claude Code Review
         id: claude
         uses: anthropics/claude-code-action@beta
@@ -237,3 +235,4 @@ jobs:
           echo "gh workflow run claude-code-review.yml -f review_mode=hunt" >> $GITHUB_STEP_SUMMARY
           echo "gh workflow run claude-code-review.yml -f review_mode=security -f verbose=true" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
