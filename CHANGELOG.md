@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.3.0...0.4.0) (2025-07-23)
+
+
+### Features
+
+* standardize release-please configuration ([#16](https://github.com/lgallard/terraform-aws-ecrpublic/issues/16)) ([04d67d9](https://github.com/lgallard/terraform-aws-ecrpublic/commit/04d67d9876fd4bc0310ea4e63834617241d9f396))
+
 ## [0.3.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.2.0...0.3.0) (2025-06-21)
 
 
