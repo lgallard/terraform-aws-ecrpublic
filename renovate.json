@@ -1,5 +1,10 @@
 {
-  "extends": ["config:base"],
+  "extends": ["config:base", "docker:enableMajor", ":enableVulnerabilityAlertsWithLabel(security)"],
+  "timezone": "America/New_York",
+  "dependencyDashboard": true,
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
   "terraform": {
     "ignoreDeps": ["hashicorp/terraform"]
   },
@@ -8,6 +13,11 @@
       "datasources": ["terraform-provider"],
       "updateTypes": ["major"],
       "enabled": false
+    },
+    {
+      "groupName": "terraform providers",
+      "datasources": ["terraform-provider"],
+      "updateTypes": ["minor", "patch"]
     }
   ]
 }
