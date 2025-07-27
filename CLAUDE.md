@@ -36,12 +36,12 @@ resource "aws_ecrpublic_repository" "repo" {
   dynamic "catalog_data" {
     for_each = local.catalog_data
     content {
-      about_text        = lookup(catalog_data.value, "about_text")
-      architectures     = lookup(catalog_data.value, "architectures")
-      description       = lookup(catalog_data.value, "description")
-      logo_image_blob   = lookup(catalog_data.value, "logo_image_blob")
-      operating_systems = lookup(catalog_data.value, "operating_systems")
-      usage_text        = lookup(catalog_data.value, "usage_text")
+      about_text        = lookup(catalog_data.value, "about_text", null)
+      architectures     = lookup(catalog_data.value, "architectures", null)
+      description       = lookup(catalog_data.value, "description", null)
+      logo_image_blob   = lookup(catalog_data.value, "logo_image_blob", null)
+      operating_systems = lookup(catalog_data.value, "operating_systems", null)
+      usage_text        = lookup(catalog_data.value, "usage_text", null)
     }
   }
 
@@ -49,7 +49,7 @@ resource "aws_ecrpublic_repository" "repo" {
   dynamic "timeouts" {
     for_each = local.timeouts
     content {
-      delete = lookup(timeouts.value, "delete")
+      delete = lookup(timeouts.value, "delete", null)
     }
   }
 }
@@ -93,11 +93,9 @@ variable "timeouts_delete" {
 
 locals {
   # Build timeouts configuration conditionally
-  timeouts = var.timeouts_delete == null && length(var.timeouts) == 0 ? [] : [
-    {
-      delete = lookup(var.timeouts, "delete", null) == null ? var.timeouts_delete : lookup(var.timeouts, "delete")
-    }
-  ]
+  timeouts = (var.timeouts_delete != null || length(var.timeouts) > 0) ? [{
+    delete = coalesce(lookup(var.timeouts, "delete", null), var.timeouts_delete)
+  }] : []
 }
 ```
 
@@ -349,7 +347,12 @@ resource "aws_ecrpublic_repository" "optimized" {
 ```bash
 # Example testing approach for ECR Public
 terraform init
-terraform plan -var="repository_name=test-repo-$(date +%s)" \
+
+# Use single timestamp to avoid race conditions
+TIMESTAMP=$(date +%s)
+REPO_NAME="test-repo-$TIMESTAMP"
+
+terraform plan -var="repository_name=$REPO_NAME" \
                -var="catalog_data_description=Test repository" \
                -var="catalog_data_about_text=# Test\nTest repository" \
                -var="catalog_data_architectures=[\"x86-64\"]" \
@@ -358,7 +361,6 @@ terraform plan -var="repository_name=test-repo-$(date +%s)" \
 terraform apply -auto-approve
 
 # Verify repository in ECR Public Gallery
-REPO_NAME="test-repo-$(date +%s)"
 aws ecr-public describe-repositories --repository-names "$REPO_NAME" --region us-east-1
 
 # Test repository accessibility (ECR Public is always in us-east-1)
@@ -442,8 +444,7 @@ module "public-ecr" {
     architectures     = ["ARM", "x86-64"]
     description       = "Production-ready public container image"
     # Validate file existence and size before using filebase64()
-    # Consider implementing: can(fileexists("${path.module}/logo.png")) in validation
-    logo_image_blob   = filebase64("${path.module}/logo.png")
+    logo_image_blob   = can(fileexists("${path.module}/logo.png")) ? filebase64("${path.module}/logo.png") : null
     operating_systems = ["Linux"]
     usage_text        = "# Usage\n\n```bash\ndocker pull public.ecr.aws/myregistry/my-complete-public-app:latest\n```"
   }
