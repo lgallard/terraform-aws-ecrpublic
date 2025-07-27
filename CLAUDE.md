@@ -1,17 +1,19 @@
 # Terraform AWS ECR Public Module - Development Guidelines
 
 ## Overview
-This document outlines Terraform-specific development guidelines for the terraform-aws-ecrpublic module, focusing on best practices for AWS ECR Public Gallery repository management infrastructure as code.
+This document outlines Terraform-specific development guidelines for the terraform-aws-ecrpublic module, focusing on best practices for AWS ECR Public Gallery repository management infrastructure as code. This module specializes in creating and managing public container repositories that are accessible via the ECR Public Gallery, designed for open-source projects and public container distribution.
 
 ## Module Structure & Organization
 
 ### File Organization
-- **main.tf** - ECR Public repository resource definitions and locals
-- **variables.tf** - Input variable definitions for catalog data and timeouts
+- **main.tf** - ECR Public repository resource definitions and locals (48 lines)
+- **variables.tf** - Input variable definitions for catalog data and timeouts (62 lines)
 - **outputs.tf** - Output value definitions for repository attributes
 - **versions.tf** - Provider version constraints
 - **examples/** - Example configurations for different use cases
-- **test/** - Go-based Terratest integration tests (if implemented)
+  - **using_objects/** - Object-based catalog data configuration
+  - **using_variables/** - Variable-based catalog data configuration  
+- **test/** - Go-based Terratest integration tests
 
 ### Code Organization Principles
 - Focus on single ECR Public repository resource management
@@ -26,11 +28,11 @@ This document outlines Terraform-specific development guidelines for the terrafo
 **Single ECR Public repository with flexible catalog data configuration:**
 
 ```hcl
-# ECR Public repository with dynamic catalog data
+# ECR Public repository with dynamic catalog data configuration
 resource "aws_ecrpublic_repository" "repo" {
   repository_name = var.repository_name
 
-  # Dynamic catalog data configuration
+  # Dynamic catalog data configuration for ECR Public Gallery
   dynamic "catalog_data" {
     for_each = local.catalog_data
     content {
@@ -43,7 +45,7 @@ resource "aws_ecrpublic_repository" "repo" {
     }
   }
 
-  # Optional timeouts
+  # Optional timeouts for repository operations
   dynamic "timeouts" {
     for_each = local.timeouts
     content {
@@ -57,7 +59,7 @@ resource "aws_ecrpublic_repository" "repo" {
 **Implement flexible catalog data configuration supporting both object and variable approaches:**
 
 ```hcl
-# Support both object-based and variable-based catalog data
+# Support both object-based and variable-based catalog data configuration
 locals {
   catalog_data = [
     {
@@ -99,43 +101,119 @@ locals {
 }
 ```
 
+### Variable Validation Patterns
+**Implement robust validation for ECR Public Gallery content:**
+
+```hcl
+# Example: Enhanced variable validation for public content
+variable "catalog_data_description" {
+  description = "Public description visible in ECR Public Gallery"
+  type        = string
+  default     = null
+  
+  validation {
+    condition     = var.catalog_data_description == null || length(var.catalog_data_description) <= 256
+    error_message = "Description must be 256 characters or less for ECR Public Gallery visibility."
+  }
+}
+
+variable "catalog_data_architectures" {
+  description = "Supported architectures for container images"
+  type        = list(string)
+  default     = []
+  
+  validation {
+    condition = alltrue([
+      for arch in var.catalog_data_architectures : 
+      contains(["ARM", "ARM 64", "x86", "x86-64"], arch)
+    ])
+    error_message = "Architectures must be one of: ARM, ARM 64, x86, x86-64."
+  }
+}
+
+variable "catalog_data_operating_systems" {
+  description = "Supported operating systems for container images"
+  type        = list(string)
+  default     = []
+  
+  validation {
+    condition = alltrue([
+      for os in var.catalog_data_operating_systems : 
+      contains(["Linux", "Windows"], os)
+    ])
+    error_message = "Operating systems must be one of: Linux, Windows."
+  }
+}
+```
+
 ## Testing Requirements
 
 ### Terratest Integration
-**Use Go-based testing for ECR resources:**
+**Use Go-based testing for ECR Public resources:**
 
 ```go
-// Example: Basic ECR testing pattern
-func TestTerraformECRExample(t *testing.T) {
+// Example: ECR Public testing pattern
+func TestTerraformECRPublicExample(t *testing.T) {
     terraformOptions := &terraform.Options{
-        TerraformDir: "../examples/simple",
+        TerraformDir: "../examples/using_variables",
         Vars: map[string]interface{}{
-            "repository_name": fmt.Sprintf("test-repo-%s", random.UniqueId()),
+            "repository_name": fmt.Sprintf("test-public-repo-%s", random.UniqueId()),
+            "catalog_data_description": "Test repository for Terratest",
+            "catalog_data_about_text": "# Test Repository\nThis is a test repository created by Terratest",
+            "catalog_data_architectures": []string{"x86-64"},
+            "catalog_data_operating_systems": []string{"Linux"},
         },
     }
 
     defer terraform.Destroy(t, terraformOptions)
     terraform.InitAndApply(t, terraformOptions)
 
-    // Validate ECR repository creation
+    // Validate ECR Public repository creation
     repositoryName := terraform.Output(t, terraformOptions, "repository_name")
+    repositoryURI := terraform.Output(t, terraformOptions, "repository_uri")
+    
     assert.NotEmpty(t, repositoryName)
+    assert.Contains(t, repositoryURI, "public.ecr.aws")
+    
+    // Validate catalog data was applied
+    registryID := terraform.Output(t, terraformOptions, "registry_id")
+    assert.NotEmpty(t, registryID)
 }
 ```
 
 ### Test Coverage Strategy
-**Comprehensive testing for ECR functionality:**
+**Comprehensive testing for ECR Public functionality:**
 - **Create corresponding test files** in `test/` directory
-- **Test both protected and non-protected repository patterns**
-- **Validate KMS encryption integration**
-- **Test lifecycle policies and image scanning**
-- **Verify registry scanning and pull-through cache**
-- **Test multi-region replication scenarios**
+- **Test both object-based and variable-based configuration patterns**
+- **Validate catalog data content and formatting**
+- **Test public repository accessibility and URI format**
+- **Verify timeout configuration handling**
+- **Test example configurations in `examples/` directory**
+- **Validate variable validation rules**
 
 ## ECR Public Gallery Considerations
 
+### Region Constraints
+**ECR Public repositories must be created in us-east-1:**
+
+```hcl
+# ECR Public provider configuration - must use us-east-1
+provider "aws" {
+  alias  = "ecr_public"
+  region = "us-east-1"
+}
+
+# ECR Public repositories can only be created in us-east-1
+resource "aws_ecrpublic_repository" "repo" {
+  provider = aws.ecr_public
+  
+  repository_name = var.repository_name
+  # Repository configuration...
+}
+```
+
 ### Public Repository Management
-**ECR Public repositories are publicly accessible by design:**
+**ECR Public repositories are globally accessible by design:**
 
 ```hcl
 # ECR Public repositories are automatically accessible to all AWS users
@@ -271,14 +349,37 @@ resource "aws_ecrpublic_repository" "optimized" {
 ```bash
 # Example testing approach for ECR Public
 terraform init
-terraform plan -var="repository_name=test-repo-$(date +%s)"
+terraform plan -var="repository_name=test-repo-$(date +%s)" \
+               -var="catalog_data_description=Test repository" \
+               -var="catalog_data_about_text=# Test\nTest repository" \
+               -var="catalog_data_architectures=[\"x86-64\"]" \
+               -var="catalog_data_operating_systems=[\"Linux\"]"
+
 terraform apply -auto-approve
 
 # Verify repository in ECR Public Gallery
-aws ecr-public describe-repositories --repository-names test-repo-$(date +%s)
+aws ecr-public describe-repositories --repository-names test-repo-$(date +%s) --region us-east-1
+
+# Test repository accessibility (ECR Public is always in us-east-1)
+aws ecr-public get-login-token --region us-east-1
 
 # Clean up
 terraform destroy -auto-approve
+```
+
+### Manual Validation
+**Verify ECR Public Gallery integration:**
+
+```bash
+# Check repository in ECR Public Gallery
+aws ecr-public describe-repositories --region us-east-1
+aws ecr-public describe-repository-creation-template --region us-east-1
+
+# Validate catalog data
+aws ecr-public get-repository-catalog-data --repository-name <repository-name> --region us-east-1
+
+# Test public accessibility (no authentication required for public repositories)
+docker pull public.ecr.aws/<registry-alias>/<repository-name>:latest
 ```
 
 ### Release Management
@@ -367,15 +468,17 @@ terraform {
 
 ## Key Module Features
 
-1. **ECR Public Repository Management** - Single public repository creation
-2. **Flexible Catalog Data Configuration** - Support for object and variable-based approaches
-3. **Public Gallery Integration** - Optimized for ECR Public Gallery visibility
-4. **Markdown Content Support** - Rich descriptions and usage documentation
-5. **Architecture & OS Tagging** - Proper categorization for discovery
-6. **Logo Image Support** - Visual branding for verified accounts
-7. **Timeout Configuration** - Configurable operation timeouts
-8. **Validation Rules** - Input validation for proper catalog data
-9. **Backward Compatibility** - Support for legacy variable patterns
-10. **Public Access by Design** - No additional IAM configuration required
+1. **ECR Public Repository Management** - Single public repository creation with us-east-1 region constraint
+2. **Flexible Catalog Data Configuration** - Support for both object-based and variable-based configuration approaches
+3. **Public Gallery Integration** - Optimized metadata for ECR Public Gallery visibility and discoverability
+4. **Rich Markdown Content Support** - Comprehensive descriptions and usage documentation with markdown formatting
+5. **Architecture & OS Tagging** - Proper categorization with validated architecture and operating system metadata
+6. **Logo Image Support** - Visual branding support for verified AWS accounts (base64 encoded images)
+7. **Flexible Timeout Configuration** - Configurable operation timeouts for repository management
+8. **Comprehensive Validation Rules** - Input validation for catalog data fields and content formatting
+9. **Dual Configuration Patterns** - Backward compatibility with both object and individual variable approaches
+10. **Global Public Access** - Repositories are globally accessible without additional IAM configuration
+11. **Gallery Content Optimization** - Best practices for searchable, discoverable public repositories
+12. **Example-Driven Documentation** - Multiple configuration examples for different use cases
 
-*Note: This module focuses on AWS ECR Public best practices and patterns specific to public container registry management in the ECR Public Gallery.*
+*Note: This module focuses exclusively on AWS ECR Public Gallery best practices and patterns for public container distribution and open-source project hosting.*
