@@ -63,12 +63,12 @@ resource "aws_ecrpublic_repository" "repo" {
 locals {
   catalog_data = [
     {
-      about_text        = lookup(var.catalog_data, "about_text", null) == null ? var.catalog_data_about_text : lookup(var.catalog_data, "about_text", null)
-      architectures     = lookup(var.catalog_data, "architectures", []) == null ? var.catalog_data_architectures : lookup(var.catalog_data, "architectures", [])
-      description       = lookup(var.catalog_data, "description", null) == null ? var.catalog_data_description : lookup(var.catalog_data, "description", null)
-      logo_image_blob   = lookup(var.catalog_data, "logo_image_blob", null) == null ? var.catalog_data_logo_image_blob : lookup(var.catalog_data, "logo_image_blob", null)
-      operating_systems = lookup(var.catalog_data, "operating_systems", []) == null ? var.catalog_data_operating_systems : lookup(var.catalog_data, "operating_systems", [])
-      usage_text        = lookup(var.catalog_data, "usage_text", null) == null ? var.catalog_data_usage_text : lookup(var.catalog_data, "usage_text", null)
+      about_text        = coalesce(lookup(var.catalog_data, "about_text", null), var.catalog_data_about_text)
+      architectures     = coalesce(lookup(var.catalog_data, "architectures", null), var.catalog_data_architectures, [])
+      description       = coalesce(lookup(var.catalog_data, "description", null), var.catalog_data_description)
+      logo_image_blob   = coalesce(lookup(var.catalog_data, "logo_image_blob", null), var.catalog_data_logo_image_blob)
+      operating_systems = coalesce(lookup(var.catalog_data, "operating_systems", null), var.catalog_data_operating_systems, [])
+      usage_text        = coalesce(lookup(var.catalog_data, "usage_text", null), var.catalog_data_usage_text)
     }
   ]
 }
@@ -252,8 +252,8 @@ variable "catalog_data_about_text" {
   default     = null
   
   validation {
-    condition     = var.catalog_data_about_text == null || can(regex("^[\\s\\S]*$", var.catalog_data_about_text))
-    error_message = "About text must be valid markdown."
+    condition     = var.catalog_data_about_text == null || length(var.catalog_data_about_text) > 0
+    error_message = "About text cannot be empty when provided."
   }
 }
 ```
@@ -358,7 +358,8 @@ terraform plan -var="repository_name=test-repo-$(date +%s)" \
 terraform apply -auto-approve
 
 # Verify repository in ECR Public Gallery
-aws ecr-public describe-repositories --repository-names test-repo-$(date +%s) --region us-east-1
+REPO_NAME="test-repo-$(date +%s)"
+aws ecr-public describe-repositories --repository-names "$REPO_NAME" --region us-east-1
 
 # Test repository accessibility (ECR Public is always in us-east-1)
 aws ecr-public get-login-token --region us-east-1
@@ -438,10 +439,12 @@ module "public-ecr" {
 
   catalog_data = {
     about_text        = "# Public Application\nComprehensive description in Markdown"
-    architectures     = ["Linux"]
+    architectures     = ["ARM", "x86-64"]
     description       = "Production-ready public container image"
+    # Validate file existence and size before using filebase64()
+    # Consider implementing: can(fileexists("${path.module}/logo.png")) in validation
     logo_image_blob   = filebase64("${path.module}/logo.png")
-    operating_systems = ["ARM", "x86-64"]
+    operating_systems = ["Linux"]
     usage_text        = "# Usage\n\n```bash\ndocker pull public.ecr.aws/myregistry/my-complete-public-app:latest\n```"
   }
 
