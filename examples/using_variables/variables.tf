@@ -13,7 +13,7 @@ variable "catalog_data_about_text" {
 variable "catalog_data_architectures" {
   description = "The system architecture that the images in the repository are compatible with"
   type        = list(string)
-  default     = ["Linux"]
+  default     = ["x86-64"]
 }
 
 variable "catalog_data_description" {
@@ -31,7 +31,7 @@ variable "catalog_data_logo_image_blob" {
 variable "catalog_data_operating_systems" {
   description = "The operating systems that the images in the repository are compatible with"
   type        = list(string)
-  default     = ["ARM"]
+  default     = ["Linux"]
 }
 
 variable "catalog_data_usage_text" {

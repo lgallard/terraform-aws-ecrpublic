@@ -79,8 +79,8 @@ func TestTerraformECRPublicWithCatalogData(t *testing.T) {
 			"catalog_data_description":           "Test repository created by Terratest",
 			"catalog_data_about_text":           "# Test Repository\nThis is a test repository created by automated tests.",
 			"catalog_data_usage_text":           "# Usage\nThis is for testing purposes only.",
-			"catalog_data_architectures":        []string{"Linux"},
-			"catalog_data_operating_systems":    []string{"x86-64"},
+			"catalog_data_architectures":        []string{"x86-64"},
+			"catalog_data_operating_systems":    []string{"Linux"},
 		},
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": awsRegion,

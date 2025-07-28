@@ -18,7 +18,7 @@ variable "catalog_data_about_text" {
 }
 
 variable "catalog_data_architectures" {
-  description = "The system architecture that the images in the repository are compatible with. On the Amazon ECR Public Gallery, the following supported architectures will appear as badges on the repository and are used as search filters: `Linux`, `Windows`."
+  description = "The system architecture that the images in the repository are compatible with. On the Amazon ECR Public Gallery, the following supported architectures will appear as badges on the repository and are used as search filters: 'ARM', 'ARM 64', 'x86', 'x86-64'."
   type        = list(string)
   default     = []
 }
@@ -36,7 +36,7 @@ variable "catalog_data_logo_image_blob" {
 }
 
 variable "catalog_data_operating_systems" {
-  description = "The operating systems that the images in the repository are compatible with. On the Amazon ECR Public Gallery, the following supported operating systems will appear as badges on the repository and are used as search filters. 'ARM', 'ARM 64', 'x86', 'x86-64'."
+  description = "The operating systems that the images in the repository are compatible with. On the Amazon ECR Public Gallery, the following supported operating systems will appear as badges on the repository and are used as search filters: `Linux`, `Windows`."
   type        = list(string)
   default     = null
 }

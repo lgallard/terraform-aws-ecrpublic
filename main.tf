@@ -6,12 +6,12 @@ resource "aws_ecrpublic_repository" "repo" {
   dynamic "catalog_data" {
     for_each = local.catalog_data
     content {
-      about_text        = lookup(catalog_data.value, "about_text")
-      architectures     = lookup(catalog_data.value, "architectures")
-      description       = lookup(catalog_data.value, "description")
-      logo_image_blob   = lookup(catalog_data.value, "logo_image_blob")
-      operating_systems = lookup(catalog_data.value, "operating_systems")
-      usage_text        = lookup(catalog_data.value, "usage_text")
+      about_text        = lookup(catalog_data.value, "about_text", null)
+      architectures     = lookup(catalog_data.value, "architectures", null)
+      description       = lookup(catalog_data.value, "description", null)
+      logo_image_blob   = lookup(catalog_data.value, "logo_image_blob", null)
+      operating_systems = lookup(catalog_data.value, "operating_systems", null)
+      usage_text        = lookup(catalog_data.value, "usage_text", null)
     }
   }
 
@@ -19,7 +19,7 @@ resource "aws_ecrpublic_repository" "repo" {
   dynamic "timeouts" {
     for_each = local.timeouts
     content {
-      delete = lookup(timeouts.value, "delete")
+      delete = lookup(timeouts.value, "delete", null)
     }
   }
 }
@@ -28,20 +28,18 @@ locals {
   # catalog_data
   catalog_data = [
     {
-      about_text        = lookup(var.catalog_data, "about_text", null) == null ? var.catalog_data_about_text : lookup(var.catalog_data, "about_text", null)
-      architectures     = lookup(var.catalog_data, "architectures", []) == null ? var.catalog_data_architectures : lookup(var.catalog_data, "architectures", [])
-      description       = lookup(var.catalog_data, "description", null) == null ? var.catalog_data_description : lookup(var.catalog_data, "description", null)
-      logo_image_blob   = lookup(var.catalog_data, "logo_image_blob", null) == null ? var.catalog_data_logo_image_blob : lookup(var.catalog_data, "logo_image_blob", null)
-      operating_systems = lookup(var.catalog_data, "operating_systems", []) == null ? var.catalog_data_operating_systems : lookup(var.catalog_data, "operating_systems", [])
-      usage_text        = lookup(var.catalog_data, "usage_text", null) == null ? var.catalog_data_usage_text : lookup(var.catalog_data, "usage_text", null)
+      about_text        = coalesce(lookup(var.catalog_data, "about_text", null), var.catalog_data_about_text)
+      architectures     = coalesce(lookup(var.catalog_data, "architectures", null), var.catalog_data_architectures)
+      description       = coalesce(lookup(var.catalog_data, "description", null), var.catalog_data_description)
+      logo_image_blob   = coalesce(lookup(var.catalog_data, "logo_image_blob", null), var.catalog_data_logo_image_blob)
+      operating_systems = coalesce(lookup(var.catalog_data, "operating_systems", null), var.catalog_data_operating_systems)
+      usage_text        = coalesce(lookup(var.catalog_data, "usage_text", null), var.catalog_data_usage_text)
     }
   ]
 
   # Timeouts
   # If no timeouts block is provided, build one using the default values
-  timeouts = var.timeouts_delete == null && length(var.timeouts) == 0 ? [] : [
-    {
-      delete = lookup(var.timeouts, "delete", null) == null ? var.timeouts_delete : lookup(var.timeouts, "delete")
-    }
-  ]
+  timeouts = (var.timeouts_delete != null || length(var.timeouts) > 0) ? [{
+    delete = coalesce(lookup(var.timeouts, "delete", null), var.timeouts_delete)
+  }] : []
 }
