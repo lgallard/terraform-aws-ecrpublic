@@ -197,7 +197,13 @@ This image follows enterprise architecture patterns:
 - **PostgreSQL/MySQL**: Database connectivity
 - **Redis**: Caching and session management
 - **Kafka**: Event streaming support`,
-				"usage_text":        loadTestData(t, "spring_boot_usage.md", repositoryName),
+				"usage_text":        func() string {
+					data, err := loadTestData("spring_boot_usage.md", repositoryName)
+					if err != nil {
+						t.Fatalf("Failed to load test data: %v", err)
+					}
+					return data
+				}(),
 				"architectures":     []string{"x86-64", "ARM 64"},
 				"operating_systems": []string{"Linux"},
 			},
@@ -326,17 +332,6 @@ func validateRegionalConstraints(t *testing.T, terraformOptions *terraform.Optio
 	// The fact that the repository was created successfully validates regional constraints
 }
 
-// Helper function to load test data from external file and replace placeholders
-func loadTestData(t *testing.T, filename, repositoryName string) string {
-	filePath := filepath.Join("testdata", filename)
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		t.Fatalf("Failed to load test data from %s: %v", filePath, err)
-	}
-	
-	// Replace placeholder with actual repository name
-	return strings.ReplaceAll(string(content), "{{REPOSITORY_NAME}}", repositoryName)
-}
 
 // Helper function to validate repository name format for security
 func validateRepositoryNameFormat(t *testing.T, repositoryName string) {

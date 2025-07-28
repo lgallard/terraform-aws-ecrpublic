@@ -22,6 +22,9 @@ resource "aws_ecrpublic_repository" "repo" {
       delete = lookup(timeouts.value, "delete", null)
     }
   }
+
+  # Tags for resource management and automated cleanup
+  tags = var.tags
 }
 
 locals {

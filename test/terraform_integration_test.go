@@ -30,6 +30,7 @@ func TestTerraformECRPublicBasic(t *testing.T) {
 		TerraformDir: "../",
 		Vars: map[string]interface{}{
 			"repository_name": repositoryName,
+			"tags":           generateTestTags("TestTerraformECRPublicBasic", uniqueID),
 		},
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": awsRegion,
@@ -364,3 +365,4 @@ func validateRepositoryNameFormat(t *testing.T, repositoryName string) {
 		t.Fatal("Repository name must be 256 characters or less")
 	}
 }
+

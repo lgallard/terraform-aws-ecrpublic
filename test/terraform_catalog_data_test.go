@@ -167,7 +167,13 @@ This image supports multiple architectures:
 - **NIST Guidelines**: Follows NIST container security guidelines
 - **CIS Benchmarks**: Compliant with CIS security benchmarks
 - **OWASP Standards**: Implements OWASP container security practices`,
-				"usage_text": loadTestData(t, "comprehensive_catalog_usage.md", repositoryName),
+				"usage_text": func() string {
+					data, err := loadTestData("comprehensive_catalog_usage.md", repositoryName)
+					if err != nil {
+						t.Fatalf("Failed to load test data: %v", err)
+					}
+					return data
+				}(),
 				"architectures":     []string{"x86-64", "ARM", "ARM 64"},
 				"operating_systems": []string{"Linux"},
 			},
@@ -298,17 +304,6 @@ func validateCatalogDataCompliance(t *testing.T, terraformOptions *terraform.Opt
 	// For now, successful creation indicates catalog data was valid
 }
 
-// Helper function to load test data from external file and replace placeholders
-func loadTestData(t *testing.T, filename, repositoryName string) string {
-	filePath := filepath.Join("testdata", filename)
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		t.Fatalf("Failed to load test data from %s: %v", filePath, err)
-	}
-	
-	// Replace placeholder with actual repository name
-	return strings.ReplaceAll(string(content), "{{REPOSITORY_NAME}}", repositoryName)
-}
 
 // Helper function to validate repository name format for security
 func validateRepositoryNameFormat(t *testing.T, repositoryName string) {
