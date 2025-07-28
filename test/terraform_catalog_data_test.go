@@ -2,6 +2,8 @@ package test
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -165,7 +167,7 @@ This image supports multiple architectures:
 - **NIST Guidelines**: Follows NIST container security guidelines
 - **CIS Benchmarks**: Compliant with CIS security benchmarks
 - **OWASP Standards**: Implements OWASP container security practices`,
-				"usage_text": "# Usage Guide\n\n## Quick Start\n\n### Basic Deployment\n```bash\n# Pull the latest stable release\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n\n# Run with default configuration\ndocker run -d \\\n  --name my-app \\\n  -p 8080:8080 \\\n  public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n### Production Deployment\n```bash\n# Production deployment with custom configuration\ndocker run -d \\\n  --name production-app \\\n  --restart unless-stopped \\\n  -p 8080:8080 \\\n  -e NODE_ENV=production \\\n  -e LOG_LEVEL=info \\\n  -e METRICS_ENABLED=true \\\n  -v /var/log/app:/app/logs \\\n  public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Configuration Options\n\n### Environment Variables\n\n| Variable | Description | Default | Required |\n|----------|-------------|---------|----------|\n| `NODE_ENV` | Environment mode | development | No |\n| `PORT` | Application port | 8080 | No |\n| `LOG_LEVEL` | Logging level | info | No |\n| `METRICS_ENABLED` | Enable metrics | false | No |\n| `DATABASE_URL` | Database connection | - | Yes |\n| `REDIS_URL` | Redis connection | - | No |\n\n### Volume Mounts\n\n- `/app/logs`: Application log files\n- `/app/config`: Configuration files\n- `/app/data`: Persistent data storage\n\n## Health Monitoring\n\n### Health Check Endpoints\n\n```bash\n# Application health\ncurl http://localhost:8080/health\n\n# Readiness check\ncurl http://localhost:8080/ready\n\n# Metrics endpoint\ncurl http://localhost:8080/metrics\n```\n\n### Expected Responses\n\n```json\n{\n  \"status\": \"healthy\",\n  \"timestamp\": \"2024-01-01T12:00:00Z\",\n  \"uptime\": 3600,\n  \"version\": \"1.0.0\"\n}\n```\n\n## Kubernetes Deployment\n\n### Basic Deployment\n```yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: enterprise-app\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: enterprise-app\n  template:\n    metadata:\n      labels:\n        app: enterprise-app\n    spec:\n      containers:\n      - name: app\n        image: public.ecr.aws/registry/" + repositoryName + ":latest\n        ports:\n        - containerPort: 8080\n        env:\n        - name: NODE_ENV\n          value: \"production\"\n        livenessProbe:\n          httpGet:\n            path: /health\n            port: 8080\n          initialDelaySeconds: 30\n          periodSeconds: 10\n        readinessProbe:\n          httpGet:\n            path: /ready\n            port: 8080\n          initialDelaySeconds: 5\n          periodSeconds: 5\n```\n\n## Security Considerations\n\n### Running as Non-root\nThis container runs as a non-root user by default:\n\n```bash\n# Verify non-root execution\ndocker run --rm public.ecr.aws/registry/" + repositoryName + ":latest id\n# Output: uid=1001(appuser) gid=1001(appuser) groups=1001(appuser)\n```\n\n### Scanning for Vulnerabilities\n```bash\n# Scan image for vulnerabilities\ndocker scout cves public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Troubleshooting\n\n### Common Issues\n\n**Port Already in Use**\n```bash\n# Use different port\ndocker run -p 8081:8080 public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n**Permission Issues**\n```bash\n# Check container user\ndocker run --rm public.ecr.aws/registry/" + repositoryName + ":latest whoami\n```\n\n### Debug Mode\n```bash\n# Run in debug mode\ndocker run -e LOG_LEVEL=debug public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Support & Contributing\n\n- **Issues**: Report issues on the project repository\n- **Documentation**: Comprehensive docs at project homepage\n- **Security**: Report security issues privately\n- **Contributing**: Pull requests welcome with proper testing",
+				"usage_text": loadTestData(t, "comprehensive_catalog_usage.md", repositoryName),
 				"architectures":     []string{"x86-64", "ARM", "ARM 64"},
 				"operating_systems": []string{"Linux"},
 			},
@@ -294,6 +296,18 @@ func validateCatalogDataCompliance(t *testing.T, terraformOptions *terraform.Opt
 
 	// Additional compliance validations can be added here
 	// For now, successful creation indicates catalog data was valid
+}
+
+// Helper function to load test data from external file and replace placeholders
+func loadTestData(t *testing.T, filename, repositoryName string) string {
+	filePath := filepath.Join("testdata", filename)
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		t.Fatalf("Failed to load test data from %s: %v", filePath, err)
+	}
+	
+	// Replace placeholder with actual repository name
+	return strings.ReplaceAll(string(content), "{{REPOSITORY_NAME}}", repositoryName)
 }
 
 // Helper function to validate repository name format for security

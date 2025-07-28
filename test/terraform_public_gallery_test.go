@@ -2,6 +2,8 @@ package test
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -195,7 +197,7 @@ This image follows enterprise architecture patterns:
 - **PostgreSQL/MySQL**: Database connectivity
 - **Redis**: Caching and session management
 - **Kafka**: Event streaming support`,
-				"usage_text":        "# Usage Guide\n\n## Basic Spring Boot Application\n\n```bash\n# Run a basic Spring Boot application\ndocker run -p 8080:8080 \\\n  -v $(pwd)/app.jar:/app/application.jar \\\n  public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Production Deployment\n\n```bash\n# Production deployment with environment configuration\ndocker run -d \\\n  --name java-app \\\n  --restart unless-stopped \\\n  -p 8080:8080 \\\n  -e SPRING_PROFILES_ACTIVE=production \\\n  -e JAVA_OPTS=\"-Xmx2g -Xms1g\" \\\n  -e DATABASE_URL=\"jdbc:postgresql://db:5432/myapp\" \\\n  -v /app/logs:/opt/app/logs \\\n  -v $(pwd)/application.jar:/app/application.jar \\\n  public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Docker Compose Setup\n\n```yaml\nversion: '3.8'\nservices:\n  app:\n    image: public.ecr.aws/registry/" + repositoryName + ":latest\n    ports:\n      - \"8080:8080\"\n    environment:\n      - SPRING_PROFILES_ACTIVE=production\n      - DATABASE_URL=jdbc:postgresql://db:5432/myapp\n      - REDIS_URL=redis://redis:6379\n    volumes:\n      - ./app.jar:/app/application.jar\n      - ./logs:/opt/app/logs\n    depends_on:\n      - db\n      - redis\n      \n  db:\n    image: postgres:15\n    environment:\n      POSTGRES_DB: myapp\n      POSTGRES_USER: user\n      POSTGRES_PASSWORD: password\n      \n  redis:\n    image: redis:7-alpine\n```\n\n## Kubernetes Deployment\n\n```yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: java-app\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: java-app\n  template:\n    metadata:\n      labels:\n        app: java-app\n    spec:\n      containers:\n      - name: app\n        image: public.ecr.aws/registry/" + repositoryName + ":latest\n        ports:\n        - containerPort: 8080\n        env:\n        - name: SPRING_PROFILES_ACTIVE\n          value: \"kubernetes\"\n        - name: JAVA_OPTS\n          value: \"-Xmx2g -Xms1g -XX:+UseG1GC\"\n        resources:\n          requests:\n            memory: \"1Gi\"\n            cpu: \"500m\"\n          limits:\n            memory: \"3Gi\"\n            cpu: \"2\"\n        livenessProbe:\n          httpGet:\n            path: /actuator/health\n            port: 8080\n          initialDelaySeconds: 60\n          periodSeconds: 30\n        readinessProbe:\n          httpGet:\n            path: /actuator/health/readiness\n            port: 8080\n          initialDelaySeconds: 30\n          periodSeconds: 10\n        volumeMounts:\n        - name: app-jar\n          mountPath: /app/application.jar\n          subPath: application.jar\n      volumes:\n      - name: app-jar\n        configMap:\n          name: app-config\n```\n\n## Configuration\n\n### Environment Variables\n\n| Variable | Description | Default | Required |\n|----------|-------------|---------|----------|\n| `SPRING_PROFILES_ACTIVE` | Active Spring profiles | default | No |\n| `JAVA_OPTS` | JVM options | -Xmx1g -Xms512m | No |  \n| `DATABASE_URL` | Database connection URL | - | Yes |\n| `REDIS_URL` | Redis connection URL | - | No |\n| `LOG_LEVEL` | Application log level | INFO | No |\n\n### Health Monitoring\n\n```bash\n# Application health\ncurl http://localhost:8080/actuator/health\n\n# Readiness check  \ncurl http://localhost:8080/actuator/health/readiness\n\n# Metrics endpoint\ncurl http://localhost:8080/actuator/metrics\n```\n\n## Security Best Practices\n\n### Non-root User\n```bash\n# Verify non-root execution\ndocker exec container-name id\n# Output: uid=1001(appuser) gid=1001(appuser)\n```\n\n### Vulnerability Scanning\n```bash\n# Scan for vulnerabilities\ndocker scout cves public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Troubleshooting\n\n### Memory Issues\n```bash\n# Increase heap size\ndocker run -e JAVA_OPTS=\"-Xmx4g -Xms2g\" public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n### Debug Mode\n```bash\n# Enable debug logging\ndocker run -e LOG_LEVEL=DEBUG public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n### JVM Analysis\n```bash\n# Enable JVM debugging\ndocker run -e JAVA_OPTS=\"-XX:+PrintGCDetails -XX:+PrintGCTimeStamps\" \\\n  public.ecr.aws/registry/" + repositoryName + ":latest\n```",
+				"usage_text":        loadTestData(t, "spring_boot_usage.md", repositoryName),
 				"architectures":     []string{"x86-64", "ARM 64"},
 				"operating_systems": []string{"Linux"},
 			},
@@ -322,6 +324,18 @@ func validateRegionalConstraints(t *testing.T, terraformOptions *terraform.Optio
 	assert.Contains(t, repositoryURL, "public.ecr.aws", "Repository should use ECR Public domain")
 
 	// The fact that the repository was created successfully validates regional constraints
+}
+
+// Helper function to load test data from external file and replace placeholders
+func loadTestData(t *testing.T, filename, repositoryName string) string {
+	filePath := filepath.Join("testdata", filename)
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		t.Fatalf("Failed to load test data from %s: %v", filePath, err)
+	}
+	
+	// Replace placeholder with actual repository name
+	return strings.ReplaceAll(string(content), "{{REPOSITORY_NAME}}", repositoryName)
 }
 
 // Helper function to validate repository name format for security
