@@ -2,23 +2,22 @@ package test
 
 import (
 	"fmt"
-	"math/rand"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/gruntwork-io/terratest/modules/aws"
+	"github.com/gruntwork-io/terratest/modules/random"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTerraformECRPublicIntegration(t *testing.T) {
+// TestTerraformECRPublicBasic tests basic ECR Public repository creation
+func TestTerraformECRPublicBasic(t *testing.T) {
 	t.Parallel()
 
 	// Generate a unique repository name to avoid conflicts
-	rand.Seed(time.Now().UnixNano())
-	uniqueID := fmt.Sprintf("test-%d", rand.Intn(100000))
-	repositoryName := fmt.Sprintf("terratest-ecrpublic-%s", uniqueID)
+	uniqueID := strings.ToLower(random.UniqueId())
+	repositoryName := fmt.Sprintf("terratest-basic-%s", uniqueID)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
@@ -40,34 +39,24 @@ func TestTerraformECRPublicIntegration(t *testing.T) {
 	terraform.InitAndApply(t, terraformOptions)
 
 	// Verify the ECR Public repository was created
-	repositoryURL := terraform.Output(t, terraformOptions, "repository_url")
-	assert.NotEmpty(t, repositoryURL)
-	assert.Contains(t, repositoryURL, repositoryName)
-	assert.Contains(t, repositoryURL, "public.ecr.aws")
+	validateECRPublicRepository(t, terraformOptions, repositoryName)
 
-	// Verify repository details using AWS SDK
-	actualRepositoryName := terraform.Output(t, terraformOptions, "repository_name")
-	assert.Equal(t, repositoryName, actualRepositoryName)
+	// Verify basic outputs
+	validateBasicOutputs(t, terraformOptions, repositoryName)
 
-	// Check if repository exists using AWS CLI/SDK
+	// Check if repository exists using AWS session
 	session, err := aws.NewAuthenticatedSession(awsRegion)
 	assert.NoError(t, err, "Should be able to create AWS session")
-	
-	// Note: We can't easily verify ECR Public repositories exist via AWS SDK 
-	// since the ECR Public APIs are different from regular ECR
-	// The fact that terraform apply succeeded and outputs are correct 
-	// is sufficient verification for this test
-	
 	assert.NotNil(t, session, "AWS session should be created successfully")
 }
 
-func TestTerraformECRPublicWithCatalogData(t *testing.T) {
+// TestTerraformECRPublicWithVariableCatalogData tests ECR Public repository with catalog data using variables
+func TestTerraformECRPublicWithVariableCatalogData(t *testing.T) {
 	t.Parallel()
 
 	// Generate a unique repository name to avoid conflicts
-	rand.Seed(time.Now().UnixNano())
-	uniqueID := fmt.Sprintf("test-%d", rand.Intn(100000))
-	repositoryName := fmt.Sprintf("terratest-catalog-%s", uniqueID)
+	uniqueID := strings.ToLower(random.UniqueId())
+	repositoryName := fmt.Sprintf("terratest-vars-%s", uniqueID)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
@@ -76,11 +65,11 @@ func TestTerraformECRPublicWithCatalogData(t *testing.T) {
 		TerraformDir: "../examples/using_variables",
 		Vars: map[string]interface{}{
 			"repository_name":                    repositoryName,
-			"catalog_data_description":           "Test repository created by Terratest",
-			"catalog_data_about_text":           "# Test Repository\nThis is a test repository created by automated tests.",
-			"catalog_data_usage_text":           "# Usage\nThis is for testing purposes only.",
-			"catalog_data_architectures":        []string{"Linux"},
-			"catalog_data_operating_systems":    []string{"x86-64"},
+			"catalog_data_description":           "Test repository created by Terratest using variables",
+			"catalog_data_about_text":           "# Test Repository\nThis is a test repository created by automated tests using variable-based configuration.",
+			"catalog_data_usage_text":           "# Usage\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n```",
+			"catalog_data_architectures":        []string{"x86-64"},
+			"catalog_data_operating_systems":    []string{"Linux"},
 		},
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": awsRegion,
@@ -94,31 +83,33 @@ func TestTerraformECRPublicWithCatalogData(t *testing.T) {
 	terraform.InitAndApply(t, terraformOptions)
 
 	// Verify the ECR Public repository was created with catalog data
-	repositoryURL := terraform.Output(t, terraformOptions, "repository_url")
-	assert.NotEmpty(t, repositoryURL)
-	assert.Contains(t, repositoryURL, repositoryName)
-	assert.Contains(t, repositoryURL, "public.ecr.aws")
-
-	actualRepositoryName := terraform.Output(t, terraformOptions, "repository_name")
-	assert.Equal(t, repositoryName, actualRepositoryName)
+	validateECRPublicRepository(t, terraformOptions, repositoryName)
+	validateCatalogDataOutputs(t, terraformOptions, repositoryName)
 }
 
-func TestTerraformECRPublicExample(t *testing.T) {
-	// Skip parallel execution for this test to avoid ECR Public quota issues
-	
+// TestTerraformECRPublicWithObjectCatalogData tests ECR Public repository with catalog data using objects
+func TestTerraformECRPublicWithObjectCatalogData(t *testing.T) {
+	t.Parallel()
+
 	// Generate a unique repository name to avoid conflicts
-	rand.Seed(time.Now().UnixNano())
-	uniqueID := fmt.Sprintf("example-%d", rand.Intn(100000))
-	repositoryName := fmt.Sprintf("terratest-example-%s", uniqueID)
+	uniqueID := strings.ToLower(random.UniqueId())
+	repositoryName := fmt.Sprintf("terratest-obj-%s", uniqueID)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
 
-	// Test the using_objects example with modifications
+	// Create custom terraform options for object-based catalog data
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../examples/using_objects",
+		TerraformDir: "../",
 		Vars: map[string]interface{}{
 			"repository_name": repositoryName,
+			"catalog_data": map[string]interface{}{
+				"description":       "Test repository created by Terratest using objects",
+				"about_text":       "# Test Repository\nThis is a test repository created by automated tests using object-based configuration.",
+				"usage_text":       "# Usage\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n```",
+				"architectures":     []string{"x86-64", "ARM 64"},
+				"operating_systems": []string{"Linux"},
+			},
 		},
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": awsRegion,
@@ -128,24 +119,182 @@ func TestTerraformECRPublicExample(t *testing.T) {
 	// Clean up resources with "terraform destroy" at the end of the test
 	defer terraform.Destroy(t, terraformOptions)
 
-	// Modify the example to use our test repository name
-	// We'll need to create a temporary version of the example
-	tempTerraformDir := createTempExampleDir(t, repositoryName)
-	terraformOptions.TerraformDir = tempTerraformDir
-	
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)
 
-	// Verify the repository was created
-	repositoryURL := terraform.Output(t, terraformOptions, "repository_url")
-	assert.NotEmpty(t, repositoryURL)
-	assert.Contains(t, repositoryURL, repositoryName)
-	assert.Contains(t, strings.ToLower(repositoryURL), "public.ecr.aws")
+	// Verify the ECR Public repository was created with catalog data
+	validateECRPublicRepository(t, terraformOptions, repositoryName)
+	validateCatalogDataOutputs(t, terraformOptions, repositoryName)
 }
 
-// Helper function to create a temporary example directory with unique repository name
-func createTempExampleDir(t *testing.T, repositoryName string) string {
-	// For now, let's simplify and just use the examples/using_variables approach
-	// which allows us to override variables more easily
-	return "../examples/using_variables"
+// TestTerraformECRPublicWithTimeouts tests ECR Public repository with custom timeouts
+func TestTerraformECRPublicWithTimeouts(t *testing.T) {
+	t.Parallel()
+
+	// Generate a unique repository name to avoid conflicts
+	uniqueID := strings.ToLower(random.UniqueId())
+	repositoryName := fmt.Sprintf("terratest-timeout-%s", uniqueID)
+
+	// Use us-east-1 as ECR Public is only available in this region
+	awsRegion := "us-east-1"
+
+	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+		TerraformDir: "../",
+		Vars: map[string]interface{}{
+			"repository_name": repositoryName,
+			"timeouts": map[string]interface{}{
+				"delete": "30m",
+			},
+		},
+		EnvVars: map[string]string{
+			"AWS_DEFAULT_REGION": awsRegion,
+		},
+	})
+
+	// Clean up resources with "terraform destroy" at the end of the test
+	defer terraform.Destroy(t, terraformOptions)
+
+	// Run "terraform init" and "terraform apply"
+	terraform.InitAndApply(t, terraformOptions)
+
+	// Verify the ECR Public repository was created
+	validateECRPublicRepository(t, terraformOptions, repositoryName)
+	validateBasicOutputs(t, terraformOptions, repositoryName)
+}
+
+// TestTerraformECRPublicVariableValidation tests variable validation rules
+func TestTerraformECRPublicVariableValidation(t *testing.T) {
+	t.Parallel()
+
+	// Generate a unique repository name to avoid conflicts
+	uniqueID := strings.ToLower(random.UniqueId())
+	repositoryName := fmt.Sprintf("terratest-validation-%s", uniqueID)
+
+	// Use us-east-1 as ECR Public is only available in this region
+	awsRegion := "us-east-1"
+
+	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+		TerraformDir: "../examples/using_variables",
+		Vars: map[string]interface{}{
+			"repository_name":                    repositoryName,
+			"catalog_data_description":           "Valid description under 256 characters",
+			"catalog_data_about_text":           "# Valid About Text\nThis is a valid about text.",
+			"catalog_data_usage_text":           "# Valid Usage\nThis is valid usage text.",
+			"catalog_data_architectures":        []string{"x86-64", "ARM 64"},
+			"catalog_data_operating_systems":    []string{"Linux"},
+		},
+		EnvVars: map[string]string{
+			"AWS_DEFAULT_REGION": awsRegion,
+		},
+	})
+
+	// Clean up resources with "terraform destroy" at the end of the test
+	defer terraform.Destroy(t, terraformOptions)
+
+	// Run "terraform init" and "terraform apply"
+	terraform.InitAndApply(t, terraformOptions)
+
+	// Verify the repository was created successfully with valid inputs
+	validateECRPublicRepository(t, terraformOptions, repositoryName)
+	validateCatalogDataOutputs(t, terraformOptions, repositoryName)
+}
+
+// TestTerraformECRPublicCompleteConfiguration tests complete ECR Public configuration
+func TestTerraformECRPublicCompleteConfiguration(t *testing.T) {
+	// Skip parallel execution to avoid quota issues
+	
+	// Generate a unique repository name to avoid conflicts
+	uniqueID := strings.ToLower(random.UniqueId())
+	repositoryName := fmt.Sprintf("terratest-complete-%s", uniqueID)
+
+	// Use us-east-1 as ECR Public is only available in this region
+	awsRegion := "us-east-1"
+
+	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+		TerraformDir: "../",
+		Vars: map[string]interface{}{
+			"repository_name": repositoryName,
+			"catalog_data": map[string]interface{}{
+				"description":       "Complete test repository for comprehensive testing",
+				"about_text":       "# Complete Test Repository\n## Overview\nThis repository is created for comprehensive testing of the terraform-aws-ecrpublic module.\n\n## Features\n- Complete catalog data configuration\n- Multi-architecture support\n- Detailed documentation",
+				"usage_text":       "# Usage\n\n## Quick Start\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\ndocker run public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Advanced Usage\nSee documentation for advanced configuration options.",
+				"architectures":     []string{"x86-64", "ARM", "ARM 64"},
+				"operating_systems": []string{"Linux"},
+			},
+			"timeouts": map[string]interface{}{
+				"delete": "30m",
+			},
+		},
+		EnvVars: map[string]string{
+			"AWS_DEFAULT_REGION": awsRegion,
+		},
+	})
+
+	// Clean up resources with "terraform destroy" at the end of the test
+	defer terraform.Destroy(t, terraformOptions)
+
+	// Run "terraform init" and "terraform apply"
+	terraform.InitAndApply(t, terraformOptions)
+
+	// Verify comprehensive repository configuration
+	validateECRPublicRepository(t, terraformOptions, repositoryName)
+	validateCatalogDataOutputs(t, terraformOptions, repositoryName)
+	validateAllOutputs(t, terraformOptions, repositoryName)
+}
+
+// Helper function to validate ECR Public repository creation
+func validateECRPublicRepository(t *testing.T, terraformOptions *terraform.Options, expectedRepoName string) {
+	repositoryURL := terraform.Output(t, terraformOptions, "repository_url")
+	assert.NotEmpty(t, repositoryURL, "Repository URL should not be empty")
+	assert.Contains(t, repositoryURL, expectedRepoName, "Repository URL should contain repository name")
+	assert.Contains(t, repositoryURL, "public.ecr.aws", "Repository URL should contain public ECR domain")
+
+	actualRepositoryName := terraform.Output(t, terraformOptions, "repository_name")
+	assert.Equal(t, expectedRepoName, actualRepositoryName, "Repository name should match expected value")
+}
+
+// Helper function to validate basic outputs
+func validateBasicOutputs(t *testing.T, terraformOptions *terraform.Options, expectedRepoName string) {
+	// Validate ARN output
+	arn := terraform.Output(t, terraformOptions, "arn")
+	assert.NotEmpty(t, arn, "ARN should not be empty")
+	assert.Contains(t, arn, expectedRepoName, "ARN should contain repository name")
+
+	// Validate repository ARN output (duplicate check for backward compatibility)
+	repositoryARN := terraform.Output(t, terraformOptions, "repository_arn")
+	assert.Equal(t, arn, repositoryARN, "repository_arn should match arn output")
+
+	// Validate registry ID
+	registryID := terraform.Output(t, terraformOptions, "registry_id")
+	assert.NotEmpty(t, registryID, "Registry ID should not be empty")
+
+	// Validate repository URI
+	repositoryURI := terraform.Output(t, terraformOptions, "repository_uri")
+	assert.NotEmpty(t, repositoryURI, "Repository URI should not be empty")
+	assert.Contains(t, repositoryURI, expectedRepoName, "Repository URI should contain repository name")
+}
+
+// Helper function to validate catalog data specific outputs
+func validateCatalogDataOutputs(t *testing.T, terraformOptions *terraform.Options, expectedRepoName string) {
+	validateBasicOutputs(t, terraformOptions, expectedRepoName)
+
+	// Additional validation specific to catalog data can be added here
+	// Since catalog data is part of the repository resource, we mainly validate
+	// that the repository was created successfully with the catalog data
+}
+
+// Helper function to validate all outputs comprehensively
+func validateAllOutputs(t *testing.T, terraformOptions *terraform.Options, expectedRepoName string) {
+	// Validate all basic outputs
+	validateBasicOutputs(t, terraformOptions, expectedRepoName)
+
+	// Validate ID output
+	id := terraform.Output(t, terraformOptions, "id")
+	registryID := terraform.Output(t, terraformOptions, "registry_id")
+	assert.Equal(t, registryID, id, "id output should match registry_id")
+
+	// Validate URL vs URI consistency
+	repositoryURL := terraform.Output(t, terraformOptions, "repository_url")
+	repositoryURI := terraform.Output(t, terraformOptions, "repository_uri")
+	assert.Equal(t, repositoryURI, repositoryURL, "repository_url should match repository_uri")
 }
