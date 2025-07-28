@@ -25,21 +25,39 @@ resource "aws_ecrpublic_repository" "repo" {
 }
 
 locals {
+  # Helper values to determine if catalog_data should be created
+  _catalog_data_about_text        = lookup(var.catalog_data, "about_text", var.catalog_data_about_text)
+  _catalog_data_architectures     = lookup(var.catalog_data, "architectures", length(var.catalog_data_architectures) > 0 ? var.catalog_data_architectures : null)
+  _catalog_data_description       = lookup(var.catalog_data, "description", var.catalog_data_description)
+  _catalog_data_logo_image_blob   = lookup(var.catalog_data, "logo_image_blob", var.catalog_data_logo_image_blob)
+  _catalog_data_operating_systems = lookup(var.catalog_data, "operating_systems", var.catalog_data_operating_systems)
+  _catalog_data_usage_text        = lookup(var.catalog_data, "usage_text", var.catalog_data_usage_text)
+
+  # Only create catalog_data block if at least one field has a value
+  _has_catalog_data = (
+    local._catalog_data_about_text != null ||
+    local._catalog_data_architectures != null ||
+    local._catalog_data_description != null ||
+    local._catalog_data_logo_image_blob != null ||
+    local._catalog_data_operating_systems != null ||
+    local._catalog_data_usage_text != null
+  )
+
   # catalog_data
-  catalog_data = [
+  catalog_data = local._has_catalog_data ? [
     {
-      about_text        = coalesce(lookup(var.catalog_data, "about_text", null), var.catalog_data_about_text)
-      architectures     = coalesce(lookup(var.catalog_data, "architectures", null), var.catalog_data_architectures)
-      description       = coalesce(lookup(var.catalog_data, "description", null), var.catalog_data_description)
-      logo_image_blob   = coalesce(lookup(var.catalog_data, "logo_image_blob", null), var.catalog_data_logo_image_blob)
-      operating_systems = coalesce(lookup(var.catalog_data, "operating_systems", null), var.catalog_data_operating_systems)
-      usage_text        = coalesce(lookup(var.catalog_data, "usage_text", null), var.catalog_data_usage_text)
+      about_text        = local._catalog_data_about_text
+      architectures     = local._catalog_data_architectures
+      description       = local._catalog_data_description
+      logo_image_blob   = local._catalog_data_logo_image_blob
+      operating_systems = local._catalog_data_operating_systems
+      usage_text        = local._catalog_data_usage_text
     }
-  ]
+  ] : []
 
   # Timeouts
   # If no timeouts block is provided, build one using the default values
   timeouts = (var.timeouts_delete != null || length(var.timeouts) > 0) ? [{
-    delete = coalesce(lookup(var.timeouts, "delete", null), var.timeouts_delete)
+    delete = coalesce(lookup(var.timeouts, "delete", null), var.timeouts_delete, null)
   }] : []
 }
