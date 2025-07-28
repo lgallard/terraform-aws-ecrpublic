@@ -43,16 +43,12 @@ jobs:
       pull-requests: write
       issues: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
       - name: Find open PR
         id: find-pr
-        run: |
-          # Find the most recent open PR for this branch
-          PR_NUMBER=$(gh pr list --repo ${{ github.repository }} --state open --head ${{ github.ref_name }} --json number --jq '.[0].number // empty')
-          if [ -z "$PR_NUMBER" ]; then
-            echo "No open PR found for branch ${{ github.ref_name }}"
-            exit 1
-          fi
-          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        run: ./.github/scripts/find-pr.sh "${{ github.ref_name }}" "${{ github.repository }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -92,61 +88,7 @@ jobs:
 
       - name: Parse comment command
         id: parse-command
-        env:
-          COMMENT_BODY: ${{ github.event.comment.body }}
-        run: |
-          # Default values
-          echo "mode=review" >> $GITHUB_OUTPUT
-          echo "focus=code-quality,security,performance" >> $GITHUB_OUTPUT
-          echo "verbose=false" >> $GITHUB_OUTPUT
-          echo "include_tests=true" >> $GITHUB_OUTPUT
-
-          # Parse comment content for commands
-          if [ "${{ github.event_name }}" == "issue_comment" ] || [ "${{ github.event_name }}" == "pull_request_review_comment" ]; then
-            COMMENT="$COMMENT_BODY"
-
-            # Extract command and parameters
-            if echo "$COMMENT" | grep -qi "codebot hunt"; then
-              echo "mode=hunt" >> $GITHUB_OUTPUT
-              echo "focus=bugs,security,performance" >> $GITHUB_OUTPUT
-              echo "verbose=false" >> $GITHUB_OUTPUT
-            elif echo "$COMMENT" | grep -qi "codebot analyze"; then
-              echo "mode=analyze" >> $GITHUB_OUTPUT
-              echo "focus=architecture,patterns,complexity" >> $GITHUB_OUTPUT
-              echo "verbose=true" >> $GITHUB_OUTPUT
-            elif echo "$COMMENT" | grep -qi "codebot security"; then
-              echo "mode=security" >> $GITHUB_OUTPUT
-              echo "focus=security,vulnerabilities,compliance" >> $GITHUB_OUTPUT
-              echo "verbose=true" >> $GITHUB_OUTPUT
-            elif echo "$COMMENT" | grep -qi "codebot performance"; then
-              echo "mode=performance" >> $GITHUB_OUTPUT
-              echo "focus=performance,optimization,bottlenecks" >> $GITHUB_OUTPUT
-              echo "verbose=true" >> $GITHUB_OUTPUT
-            elif echo "$COMMENT" | grep -qi "codebot review"; then
-              echo "mode=review" >> $GITHUB_OUTPUT
-              echo "focus=code-quality,security,performance" >> $GITHUB_OUTPUT
-              echo "verbose=true" >> $GITHUB_OUTPUT
-            elif echo "$COMMENT" | grep -qi "codebot"; then
-              # Default to hunt mode for simple "codebot" command
-              echo "mode=hunt" >> $GITHUB_OUTPUT
-              echo "focus=bugs,security,performance" >> $GITHUB_OUTPUT
-              echo "verbose=false" >> $GITHUB_OUTPUT
-            fi
-
-            # Check for verbose flag
-            if echo "$COMMENT" | grep -qi "verbose\|detailed"; then
-              echo "verbose=true" >> $GITHUB_OUTPUT
-            fi
-
-            # Check for specific focus areas
-            if echo "$COMMENT" | grep -qi "security"; then
-              echo "focus=security,vulnerabilities,compliance" >> $GITHUB_OUTPUT
-            elif echo "$COMMENT" | grep -qi "performance"; then
-              echo "focus=performance,optimization,bottlenecks" >> $GITHUB_OUTPUT
-            elif echo "$COMMENT" | grep -qi "tests"; then
-              echo "focus=test-coverage,test-quality" >> $GITHUB_OUTPUT
-            fi
-          fi
+        run: ./.github/scripts/parse-comment.sh "${{ github.event.comment.body }}" "${{ github.event_name }}"
 
 
 

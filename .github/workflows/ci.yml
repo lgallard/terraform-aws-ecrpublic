@@ -12,6 +12,11 @@ on:
         required: false
         default: false
         type: boolean
+      run_security_scans:
+        description: 'Run security scans'
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   terraform:
@@ -68,11 +73,54 @@ jobs:
         go mod tidy
         go test -v -run "TestTerraformValidate|TestTerraformFormat|TestExamplesValidate|TestExamplesFormat" -parallel 4
 
+  security_scans:
+    name: Security Scans
+    runs-on: ubuntu-latest
+    # Run security scans by default, unless explicitly disabled
+    if: github.event.inputs.run_security_scans != 'false'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.7
+
+    - name: Run tfsec Security Scan
+      uses: aquasecurity/tfsec-action@v1.0.3
+      with:
+        soft_fail: true
+        format: sarif
+        out: tfsec-results.sarif
+
+    - name: Upload tfsec SARIF to GitHub Security tab
+      if: always()
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: tfsec-results.sarif
+
+    - name: Run Checkov Security Scan
+      uses: bridgecrewio/checkov-action@master
+      with:
+        directory: .
+        framework: terraform
+        output_format: sarif
+        output_file_path: checkov-results.sarif
+        soft_fail: true
+
+    - name: Upload Checkov SARIF to GitHub Security tab
+      if: always()
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: checkov-results.sarif
+
   integration_tests:
     name: Integration Tests (AWS)
     runs-on: ubuntu-latest
     # Only run integration tests on main branch pushes or manual workflow dispatch
-    if: github.ref == 'refs/heads/main' || github.event.inputs.run_integration_tests == 'true'
+    if: github.ref == 'refs/heads/main' || (github.event.inputs.run_integration_tests != null && github.event.inputs.run_integration_tests == 'true')
     
     steps:
     - name: Checkout
