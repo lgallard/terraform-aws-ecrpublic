@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.5.0...0.6.0) (2025-07-28)
+
+
+### Features
+
+* standardize GitHub Actions workflows for ECR Public module ([#24](https://github.com/lgallard/terraform-aws-ecrpublic/issues/24)) ([5e600b3](https://github.com/lgallard/terraform-aws-ecrpublic/commit/5e600b34967ae835c3a41f0c152a011b1604fee3))
+
 ## [0.5.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.4.0...0.5.0) (2025-07-28)
 
 
