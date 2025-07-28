@@ -1,13 +1,17 @@
 package test
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gruntwork-io/terratest/modules/terraform"
 )
 
 // generateTestTags creates common tags for resource cleanup and tracking
@@ -90,4 +94,132 @@ func validateRepositoryNameFormat(t *testing.T, repositoryName string) {
 	if len(repositoryName) > 256 {
 		t.Fatal("Repository name must be 256 characters or less")
 	}
+}
+
+// checkECRPublicQuota checks current ECR Public repository usage against AWS limits
+// This helps prevent quota exhaustion during parallel test execution
+func checkECRPublicQuota(t *testing.T) {
+	// Skip quota check if running in CI or if AWS_SKIP_QUOTA_CHECK is set
+	if os.Getenv("CI") != "" || os.Getenv("AWS_SKIP_QUOTA_CHECK") != "" {
+		t.Log("Skipping quota check (CI environment or AWS_SKIP_QUOTA_CHECK set)")
+		return
+	}
+
+	t.Log("Checking ECR Public repository quota...")
+	
+	// Get current repository count
+	cmd := exec.Command("aws", "ecr-public", "describe-repositories", "--region", "us-east-1", "--output", "json")
+	output, err := cmd.Output()
+	if err != nil {
+		t.Logf("Warning: Could not check ECR Public quota: %v", err)
+		return
+	}
+
+	var response struct {
+		Repositories []interface{} `json:"repositories"`
+	}
+	
+	if err := json.Unmarshal(output, &response); err != nil {
+		t.Logf("Warning: Could not parse ECR Public response: %v", err)
+		return
+	}
+
+	currentCount := len(response.Repositories)
+	
+	// ECR Public has a default limit of 10,000 repositories per region
+	// We'll warn at 80% (8,000) and fail at 95% (9,500) to leave room for other processes
+	const (
+		warningThreshold = 8000
+		errorThreshold   = 9500
+	)
+
+	t.Logf("Current ECR Public repositories: %d", currentCount)
+
+	if currentCount >= errorThreshold {
+		t.Fatalf("ECR Public repository quota nearly exhausted (%d repositories, limit ~10,000). Please clean up existing repositories before running tests.", currentCount)
+	}
+
+	if currentCount >= warningThreshold {
+		t.Logf("Warning: High ECR Public repository usage (%d repositories). Consider running cleanup script.", currentCount)
+	}
+}
+
+// ensureSafeTestExecution performs pre-flight checks for safe test execution
+// This includes quota checking and resource validation
+func ensureSafeTestExecution(t *testing.T, repositoryName string) {
+	// Validate repository name format for security
+	validateRepositoryNameFormat(t, repositoryName)
+	
+	// Check AWS quota to prevent exhaustion
+	checkECRPublicQuota(t)
+}
+
+// setupTestCleanup creates a comprehensive cleanup function for test resources
+// This handles terraform destroy failures with enhanced error recovery
+func setupTestCleanup(t *testing.T, terraformOptions *terraform.Options, repositoryName string) func() {
+	return func() {
+		t.Logf("Starting cleanup for repository: %s", repositoryName)
+		
+		// Attempt terraform destroy
+		_, err := terraform.DestroyE(t, terraformOptions)
+		if err != nil {
+			t.Logf("Warning: Terraform destroy failed: %v", err)
+			t.Logf("Repository that may need manual cleanup: %s", repositoryName)
+			
+			// Attempt direct AWS cleanup as fallback
+			t.Logf("Attempting direct AWS cleanup for repository: %s", repositoryName)
+			if cleanupErr := attemptDirectAWSCleanup(t, repositoryName); cleanupErr != nil {
+				t.Logf("Direct AWS cleanup also failed: %v", cleanupErr)
+				
+				// Provide detailed manual cleanup instructions
+				t.Logf("=== MANUAL CLEANUP REQUIRED ===")
+				t.Logf("Repository: %s", repositoryName)
+				t.Logf("Region: us-east-1")
+				t.Logf("Command: aws ecr-public delete-repository --region us-east-1 --repository-name %s --force", repositoryName)
+				t.Logf("Or use cleanup script: ./cleanup-orphaned-resources.sh")
+				t.Logf("==============================")
+			} else {
+				t.Logf("Direct AWS cleanup succeeded for repository: %s", repositoryName)
+			}
+		} else {
+			t.Logf("Successfully cleaned up repository: %s", repositoryName)
+		}
+	}
+}
+
+// attemptDirectAWSCleanup tries to clean up ECR repository directly via AWS CLI
+// This is used as a fallback when terraform destroy fails
+func attemptDirectAWSCleanup(t *testing.T, repositoryName string) error {
+	// Skip direct cleanup in CI environments to avoid permission issues
+	if os.Getenv("CI") != "" {
+		t.Log("Skipping direct AWS cleanup in CI environment")
+		return fmt.Errorf("skipped in CI environment")
+	}
+	
+	t.Logf("Attempting direct AWS cleanup for: %s", repositoryName)
+	
+	// First, check if repository exists
+	checkCmd := exec.Command("aws", "ecr-public", "describe-repositories", 
+		"--repository-names", repositoryName, 
+		"--region", "us-east-1", 
+		"--output", "json")
+	
+	if err := checkCmd.Run(); err != nil {
+		// Repository doesn't exist, cleanup not needed
+		t.Logf("Repository %s does not exist, no cleanup needed", repositoryName)
+		return nil
+	}
+	
+	// Repository exists, attempt to delete it
+	deleteCmd := exec.Command("aws", "ecr-public", "delete-repository", 
+		"--repository-name", repositoryName, 
+		"--region", "us-east-1", 
+		"--force")
+	
+	if err := deleteCmd.Run(); err != nil {
+		return fmt.Errorf("failed to delete repository %s: %v", repositoryName, err)
+	}
+	
+	t.Logf("Successfully deleted repository via AWS CLI: %s", repositoryName)
+	return nil
 }

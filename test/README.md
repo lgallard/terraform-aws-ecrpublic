@@ -108,7 +108,7 @@ go test -v -run TestTerraformECRPublicBasic
 go test -v -run TestECRPublicCatalogData
 
 # Run with timeout and parallel execution
-go test -v -timeout 45m -parallel 2
+go test -v -timeout 30m -parallel 2
 ```
 
 ## Test Categories
@@ -277,7 +277,7 @@ Tests integrate with GitHub Actions workflows:
 - name: Run Terratest
   run: |
     cd test
-    go test -v -timeout 45m -parallel 2
+    go test -v -timeout 30m -parallel 2
   env:
     AWS_DEFAULT_REGION: us-east-1
 ```

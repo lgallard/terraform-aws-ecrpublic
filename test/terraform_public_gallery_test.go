@@ -18,8 +18,8 @@ func TestECRPublicGalleryOptimization(t *testing.T) {
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-gallery-opt-%s", uniqueID)
 
-	// Validate repository name format for security
-	validateRepositoryNameFormat(t, repositoryName)
+	// Ensure safe test execution with quota and security checks
+	ensureSafeTestExecution(t, repositoryName)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
@@ -68,13 +68,8 @@ This container provides a production-ready Node.js application environment optim
 		},
 	})
 
-	// Clean up resources with "terraform destroy" at the end of the test
-	defer func() {
-		if err := terraform.DestroyE(t, terraformOptions); err != nil {
-			t.Logf("Warning: Failed to destroy resources: %v", err)
-			t.Logf("Manual cleanup needed for repository: %s", repositoryName)
-		}
-	}()
+	// Set up comprehensive cleanup with error recovery
+	defer setupTestCleanup(t, terraformOptions, repositoryName)()
 
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)
@@ -91,8 +86,8 @@ func TestECRPublicGallerySearchability(t *testing.T) {
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-searchable-%s", uniqueID)
 
-	// Validate repository name format for security
-	validateRepositoryNameFormat(t, repositoryName)
+	// Ensure safe test execution with quota and security checks
+	ensureSafeTestExecution(t, repositoryName)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
@@ -112,13 +107,8 @@ func TestECRPublicGallerySearchability(t *testing.T) {
 		},
 	})
 
-	// Clean up resources with "terraform destroy" at the end of the test
-	defer func() {
-		if err := terraform.DestroyE(t, terraformOptions); err != nil {
-			t.Logf("Warning: Failed to destroy resources: %v", err)
-			t.Logf("Manual cleanup needed for repository: %s", repositoryName)
-		}
-	}()
+	// Set up comprehensive cleanup with error recovery
+	defer setupTestCleanup(t, terraformOptions, repositoryName)()
 
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)
@@ -135,8 +125,8 @@ func TestECRPublicGalleryContentGuidelines(t *testing.T) {
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-guidelines-%s", uniqueID)
 
-	// Validate repository name format for security
-	validateRepositoryNameFormat(t, repositoryName)
+	// Ensure safe test execution with quota and security checks
+	ensureSafeTestExecution(t, repositoryName)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
@@ -210,13 +200,8 @@ This image follows enterprise architecture patterns:
 		},
 	})
 
-	// Clean up resources with "terraform destroy" at the end of the test
-	defer func() {
-		if err := terraform.DestroyE(t, terraformOptions); err != nil {
-			t.Logf("Warning: Failed to destroy resources: %v", err)
-			t.Logf("Manual cleanup needed for repository: %s", repositoryName)
-		}
-	}()
+	// Set up comprehensive cleanup with error recovery
+	defer setupTestCleanup(t, terraformOptions, repositoryName)()
 
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)
@@ -233,8 +218,8 @@ func TestECRPublicGalleryRegionalConstraints(t *testing.T) {
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-regional-%s", uniqueID)
 
-	// Validate repository name format for security
-	validateRepositoryNameFormat(t, repositoryName)
+	// Ensure safe test execution with quota and security checks
+	ensureSafeTestExecution(t, repositoryName)
 
 	// Explicitly test us-east-1 constraint
 	awsRegion := "us-east-1"
@@ -250,13 +235,8 @@ func TestECRPublicGalleryRegionalConstraints(t *testing.T) {
 		},
 	})
 
-	// Clean up resources with "terraform destroy" at the end of the test
-	defer func() {
-		if err := terraform.DestroyE(t, terraformOptions); err != nil {
-			t.Logf("Warning: Failed to destroy resources: %v", err)
-			t.Logf("Manual cleanup needed for repository: %s", repositoryName)
-		}
-	}()
+	// Set up comprehensive cleanup with error recovery
+	defer setupTestCleanup(t, terraformOptions, repositoryName)()
 
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)

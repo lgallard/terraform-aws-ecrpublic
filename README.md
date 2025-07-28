@@ -187,7 +187,7 @@ go test -v -run TestECRPublicCatalogDataValidation -timeout 45m
 #### Complete Test Suite
 ```bash
 cd test
-go test -v -timeout 60m -parallel 2
+go test -v -timeout 30m -parallel 2
 ```
 
 ### AWS Resources and Costs
