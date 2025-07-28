@@ -1,0 +1,306 @@
+name: Validate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  # Check if we should skip CI for documentation-only changes
+  check-changes:
+    name: Check Changes
+    runs-on: ubuntu-latest
+    outputs:
+      skip_ci: ${{ steps.check.outputs.skip_ci }}
+      terraform_changed: ${{ steps.check.outputs.terraform_changed }}
+      examples_changed: ${{ steps.check.outputs.examples_changed }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Check changed files
+      id: check
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          echo "skip_ci=false" >> $GITHUB_OUTPUT
+          echo "terraform_changed=true" >> $GITHUB_OUTPUT
+          echo "examples_changed=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        if [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "skip_ci=false" >> $GITHUB_OUTPUT
+          echo "terraform_changed=true" >> $GITHUB_OUTPUT
+          echo "examples_changed=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # For PRs, check what files changed
+        CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+        echo "Changed files: $CHANGED_FILES"
+
+        # Check if only documentation files changed
+        if echo "$CHANGED_FILES" | grep -vE '\.(md|txt|rst|pdf)$|^docs/|^\.github/workflows/(claude|claude-code-review|release-please)\.yml$' | grep -q .; then
+          echo "skip_ci=false" >> $GITHUB_OUTPUT
+        else
+          echo "skip_ci=true" >> $GITHUB_OUTPUT
+          echo "Only documentation files changed, skipping CI"
+        fi
+
+        # Check if Terraform files changed
+        if echo "$CHANGED_FILES" | grep -qE '\.(tf|hcl)$'; then
+          echo "terraform_changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "terraform_changed=false" >> $GITHUB_OUTPUT
+        fi
+
+        # Check if examples changed
+        if echo "$CHANGED_FILES" | grep -qE '^examples/'; then
+          echo "examples_changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "examples_changed=false" >> $GITHUB_OUTPUT
+        fi
+
+  terraform-validate:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.skip_ci == 'false'
+    strategy:
+      matrix:
+        terraform_version: ['1.3.0', '1.5.0', '1.9.0']
+        aws_provider_version: ['5.0.0', '5.70.0']
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ matrix.terraform_version }}
+
+    - name: Create test versions.tf with matrix provider version
+      run: |
+        # Backup and remove existing versions.tf to avoid conflict
+        mv versions.tf versions.tf.bak
+        cat > versions.tf << EOF
+        terraform {
+          required_version = ">= 1.3.0"
+          required_providers {
+            aws = {
+              source  = "hashicorp/aws"
+              version = "~> ${{ matrix.aws_provider_version }}"
+            }
+          }
+        }
+        EOF
+
+    - name: Terraform Format Check
+      run: terraform fmt -check=true -recursive
+
+    - name: Terraform Init
+      run: terraform init -backend=false
+
+    - name: Terraform Validate
+      run: terraform validate
+
+    # ECR Public specific validation - check us-east-1 region requirement
+    - name: ECR Public Region Validation
+      run: |
+        echo "Validating ECR Public configuration..."
+        # Check that examples properly configure us-east-1 region
+        if grep -r "aws_region.*=" examples/ | grep -v "us-east-1"; then
+          echo "Error: ECR Public repositories must be created in us-east-1 region"
+          exit 1
+        fi
+        echo "ECR Public region validation passed"
+
+    - name: Cleanup
+      run: |
+        # Restore original versions.tf
+        mv versions.tf.bak versions.tf
+
+  validate-examples:
+    name: Validate Examples
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.skip_ci == 'false' && needs.check-changes.outputs.examples_changed == 'true'
+    strategy:
+      matrix:
+        example: ['using_objects', 'using_variables']
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.9.0
+
+    - name: Terraform Format Check
+      run: |
+        if [ -d "examples/${{ matrix.example }}" ]; then
+          cd examples/${{ matrix.example }}
+          terraform fmt -check=true
+        fi
+
+    - name: Terraform Init
+      run: |
+        if [ -d "examples/${{ matrix.example }}" ]; then
+          cd examples/${{ matrix.example }}
+          terraform init -backend=false
+        fi
+
+    - name: Terraform Validate
+      run: |
+        if [ -d "examples/${{ matrix.example }}" ]; then
+          cd examples/${{ matrix.example }}
+          terraform validate
+        fi
+
+    # ECR Public specific validation for examples
+    - name: ECR Public Gallery Content Validation
+      run: |
+        cd examples/${{ matrix.example }}
+        echo "Validating ECR Public Gallery content for ${{ matrix.example }}..."
+        
+        # Check for appropriate catalog data configuration
+        if ! grep -q "catalog_data" *.tf; then
+          echo "Warning: No catalog_data configuration found in example"
+        fi
+        
+        # Check for repository naming conventions
+        if grep -q "repository_name.*=" *.tf; then
+          REPO_NAME=$(grep "repository_name.*=" *.tf | head -1 | sed 's/.*=\s*"\([^"]*\)".*/\1/')
+          if [[ "$REPO_NAME" =~ [A-Z] ]]; then
+            echo "Warning: Repository name contains uppercase letters: $REPO_NAME"
+            echo "ECR Public repository names should be lowercase"
+          fi
+        fi
+        
+        echo "ECR Public Gallery content validation completed"
+
+  validate-catalog-data:
+    name: Validate Catalog Data
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.skip_ci == 'false' && needs.check-changes.outputs.terraform_changed == 'true'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Install validation dependencies
+      run: |
+        pip install pyyaml requests
+
+    - name: Validate ECR Public Catalog Data Configuration
+      run: |
+        python3 << 'EOF'
+        import re
+        import sys
+        
+        def validate_terraform_files():
+            """Validate ECR Public catalog data in Terraform files"""
+            issues = []
+            
+            # Read main.tf and variables.tf
+            try:
+                with open('main.tf', 'r') as f:
+                    main_content = f.read()
+                with open('variables.tf', 'r') as f:
+                    vars_content = f.read()
+            except FileNotFoundError as e:
+                issues.append(f"Missing required file: {e.filename}")
+                return issues
+            
+            # Check for catalog_data configuration
+            if 'catalog_data' not in main_content:
+                issues.append("No catalog_data configuration found in main.tf")
+            
+            # Check for required catalog data variables
+            required_vars = [
+                'catalog_data_description',
+                'catalog_data_about_text',
+                'catalog_data_usage_text',
+                'catalog_data_architectures',
+                'catalog_data_operating_systems'
+            ]
+            
+            for var in required_vars:
+                if f'variable "{var}"' not in vars_content:
+                    issues.append(f"Missing catalog data variable: {var}")
+            
+            # Check for validation blocks in variables
+            arch_validation = 'contains(["ARM", "ARM 64", "x86", "x86-64"]'
+            os_validation = 'contains(["Linux", "Windows"]'
+            
+            if arch_validation not in vars_content:
+                issues.append("Missing architecture validation in variables.tf")
+            
+            if os_validation not in vars_content:
+                issues.append("Missing operating system validation in variables.tf")
+            
+            return issues
+        
+        # Run validation
+        validation_issues = validate_terraform_files()
+        
+        if validation_issues:
+            print("ECR Public catalog data validation failed:")
+            for issue in validation_issues:
+                print(f"  - {issue}")
+            sys.exit(1)
+        else:
+            print("ECR Public catalog data validation passed!")
+        EOF
+
+  validation-summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [check-changes, terraform-validate, validate-examples, validate-catalog-data]
+    if: always() && needs.check-changes.outputs.skip_ci == 'false'
+    
+    steps:
+    - name: Validation Results
+      run: |
+        echo "## Validation Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Terraform Validate | ${{ needs.terraform-validate.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Examples Validate | ${{ needs.validate-examples.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Catalog Data Validate | ${{ needs.validate-catalog-data.result }} |" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ needs.terraform-validate.result }}" == "failure" || "${{ needs.validate-examples.result }}" == "failure" || "${{ needs.validate-catalog-data.result }}" == "failure" ]]; then
+          echo "❌ Some validation checks failed. Please check the logs for details." >> $GITHUB_STEP_SUMMARY
+          exit 1
+        else
+          echo "✅ All validation checks passed successfully!" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  skip-notification:
+    name: Skip Notification
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.skip_ci == 'true'
+    
+    steps:
+    - name: Skip CI Notification
+      run: |
+        echo "## CI Skipped" >> $GITHUB_STEP_SUMMARY
+        echo "Only documentation files were changed, skipping CI checks." >> $GITHUB_STEP_SUMMARY
+        echo "The following workflows were skipped:" >> $GITHUB_STEP_SUMMARY
+        echo "- Terraform validation" >> $GITHUB_STEP_SUMMARY
+        echo "- Examples validation" >> $GITHUB_STEP_SUMMARY
+        echo "- Catalog data validation" >> $GITHUB_STEP_SUMMARY

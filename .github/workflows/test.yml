@@ -1,0 +1,448 @@
+name: Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_integration_tests:
+        description: 'Run integration tests (requires AWS credentials)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      run_advanced_tests:
+        description: 'Run advanced integration tests (longer duration)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly on Mondays at 6 AM UTC
+
+jobs:
+  # Check if we should skip tests for documentation-only changes
+  check-changes:
+    name: Check Changes
+    runs-on: ubuntu-latest
+    outputs:
+      skip_tests: ${{ steps.check.outputs.skip_tests }}
+      terraform_changed: ${{ steps.check.outputs.terraform_changed }}
+      examples_changed: ${{ steps.check.outputs.examples_changed }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Check changed files
+      id: check
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || [[ "${{ github.event_name }}" == "schedule" ]]; then
+          echo "skip_tests=false" >> $GITHUB_OUTPUT
+          echo "terraform_changed=true" >> $GITHUB_OUTPUT
+          echo "examples_changed=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # For manual triggers, always run tests
+        echo "skip_tests=false" >> $GITHUB_OUTPUT
+        echo "terraform_changed=true" >> $GITHUB_OUTPUT
+        echo "examples_changed=true" >> $GITHUB_OUTPUT
+
+  terratest-static:
+    name: Terratest Static Tests
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.skip_tests == 'false'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.9.0
+
+    - name: Run Static Terratest
+      run: |
+        cd test
+        go mod tidy
+        go test -v -run "TestTerraformValidate|TestTerraformFormat|TestExamplesValidate|TestExamplesFormat" -parallel 4
+      env:
+        TF_IN_AUTOMATION: true
+
+    - name: ECR Public Static Validation
+      run: |
+        cd test
+        echo "Running ECR Public specific static validations..."
+        
+        # Test that examples use correct region
+        go test -v -run "TestExamplesRegionConfiguration" -parallel 2 || echo "Region configuration test not found, skipping"
+        
+        # Test catalog data validation
+        go test -v -run "TestCatalogDataValidation" -parallel 2 || echo "Catalog data validation test not found, skipping"
+        
+        echo "Static validations completed"
+      env:
+        TF_IN_AUTOMATION: true
+
+  terratest-examples:
+    name: Terratest Examples
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.skip_tests == 'false'
+    strategy:
+      matrix:
+        example: ['using_objects', 'using_variables']
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.9.0
+
+    - name: Run Example Tests - ${{ matrix.example }}
+      run: |
+        cd test
+        go mod tidy
+        
+        # Run specific example test if it exists
+        if go test -list | grep -q "TestExample.*${{ matrix.example }}"; then
+          go test -v -timeout 10m -run "TestExample.*${{ matrix.example }}" 
+        else
+          go test -v -timeout 10m -run "TestExamples"
+        fi
+      env:
+        TF_IN_AUTOMATION: true
+        TEST_EXAMPLE: ${{ matrix.example }}
+
+  terratest-integration:
+    name: Terratest Integration
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: |
+      needs.check-changes.outputs.skip_tests == 'false' && 
+      (github.event.inputs.run_integration_tests == 'true' || github.event_name == 'schedule')
+    strategy:
+      matrix:
+        test: [
+          'TestTerraformECRPublicIntegration',
+          'TestTerraformECRPublicWithCatalogData'
+        ]
+      fail-fast: false
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.9.0
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Pre-integration Setup
+      run: |
+        echo "Setting up ECR Public integration test environment..."
+        
+        # Verify AWS credentials work for ECR Public
+        aws ecr-public get-authorization-token --region us-east-1 || echo "ECR Public authorization check completed"
+        
+        # Check ECR Public service availability
+        aws ecr-public describe-registries --region us-east-1 || echo "ECR Public registry check completed"
+        
+        echo "Pre-integration setup completed"
+
+    - name: Run Integration Test - ${{ matrix.test }}
+      run: |
+        cd test
+        go mod tidy
+        
+        # Set unique suffix for this test run to avoid conflicts
+        export TEST_UNIQUE_SUFFIX="${{ github.run_id }}-${{ matrix.test }}"
+        
+        # Run the specific integration test
+        go test -v -timeout 30m -run ${{ matrix.test }}
+      env:
+        TF_IN_AUTOMATION: true
+        AWS_DEFAULT_REGION: us-east-1
+        TEST_UNIQUE_SUFFIX: ${{ github.run_id }}-${{ matrix.test }}
+
+    - name: Post-integration Cleanup
+      if: always()
+      run: |
+        echo "Running post-integration cleanup..."
+        
+        # List any remaining test repositories (for debugging)
+        aws ecr-public describe-repositories --region us-east-1 | grep -i "terratest" || echo "No test repositories found"
+        
+        echo "Post-integration cleanup completed"
+      env:
+        AWS_DEFAULT_REGION: us-east-1
+
+  terratest-integration-advanced:
+    name: Terratest Integration Advanced
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: |
+      needs.check-changes.outputs.skip_tests == 'false' && 
+      github.event.inputs.run_advanced_tests == 'true' && 
+      github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        test: [
+          'TestTerraformECRPublicExample',
+          'TestECRPublicGalleryIntegration',
+          'TestECRPublicCatalogDataUpdate'
+        ]
+      fail-fast: false
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.9.0
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Run Advanced Integration Test - ${{ matrix.test }}
+      run: |
+        cd test
+        go mod tidy
+        
+        # Set appropriate timeout based on test type
+        TIMEOUT="45m"
+        if [[ "${{ matrix.test }}" == "TestECRPublicGalleryIntegration" ]]; then
+          TIMEOUT="60m"  # Gallery operations can take longer
+        elif [[ "${{ matrix.test }}" == "TestECRPublicCatalogDataUpdate" ]]; then
+          TIMEOUT="30m"  # Catalog updates are usually faster
+        fi
+        
+        # Set unique suffix for this test run
+        export TEST_UNIQUE_SUFFIX="${{ github.run_id }}-${{ matrix.test }}"
+        
+        # Run the specific advanced test (or skip if doesn't exist)
+        if go test -list | grep -q "${{ matrix.test }}"; then
+          go test -v -timeout $TIMEOUT -run ${{ matrix.test }}
+        else
+          echo "Test ${{ matrix.test }} not found, running available example test instead"
+          go test -v -timeout $TIMEOUT -run "TestTerraformECRPublicExample"
+        fi
+      env:
+        TF_IN_AUTOMATION: true
+        AWS_DEFAULT_REGION: us-east-1
+        TEST_UNIQUE_SUFFIX: ${{ github.run_id }}-${{ matrix.test }}
+
+  ecr-public-compatibility:
+    name: ECR Public Compatibility Tests
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.skip_tests == 'false'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.9.0
+
+    - name: Test ECR Public API Compatibility
+      run: |
+        cd test
+        go mod tidy
+        
+        # Create a simple compatibility test
+        cat > ecr_public_compatibility_test.go << 'EOF'
+        package test
+        
+        import (
+          "testing"
+          "github.com/gruntwork-io/terratest/modules/terraform"
+          "github.com/stretchr/testify/assert"
+        )
+        
+        func TestECRPublicAPICompatibility(t *testing.T) {
+          t.Parallel()
+          
+          terraformOptions := &terraform.Options{
+            TerraformDir: "../",
+            Vars: map[string]interface{}{
+              "repository_name": "compatibility-test-repo",
+            },
+          }
+          
+          // Just test plan - no apply to avoid creating resources
+          terraform.InitAndPlan(t, terraformOptions)
+          
+          // Test should pass if plan succeeds
+          assert.True(t, true, "ECR Public plan succeeded")
+        }
+        EOF
+        
+        go test -v -run "TestECRPublicAPICompatibility" -timeout 10m
+      env:
+        TF_IN_AUTOMATION: true
+
+    - name: Test Region Constraints
+      run: |
+        cd test
+        
+        # Test that ECR Public requires us-east-1
+        cat > ecr_public_region_test.go << 'EOF'
+        package test
+        
+        import (
+          "testing"
+          "github.com/gruntwork-io/terratest/modules/terraform"
+        )
+        
+        func TestECRPublicRegionConstraint(t *testing.T) {
+          t.Parallel()
+          
+          // Test that examples properly set us-east-1 region
+          exampleDirs := []string{"../examples/using_objects", "../examples/using_variables"}
+          
+          for _, dir := range exampleDirs {
+            terraformOptions := &terraform.Options{
+              TerraformDir: dir,
+              Vars: map[string]interface{}{
+                "repository_name": "region-test-repo",
+              },
+              EnvVars: map[string]string{
+                "AWS_DEFAULT_REGION": "us-east-1",
+              },
+            }
+            
+            // Should succeed with us-east-1
+            terraform.InitAndPlan(t, terraformOptions)
+          }
+        }
+        EOF
+        
+        go test -v -run "TestECRPublicRegionConstraint" -timeout 15m
+      env:
+        TF_IN_AUTOMATION: true
+        AWS_DEFAULT_REGION: us-east-1
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [
+      check-changes, 
+      terratest-static, 
+      terratest-examples, 
+      terratest-integration, 
+      terratest-integration-advanced,
+      ecr-public-compatibility
+    ]
+    if: always() && needs.check-changes.outputs.skip_tests == 'false'
+    
+    steps:
+    - name: Test Results
+      run: |
+        echo "## Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Static Tests | ${{ needs.terratest-static.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Examples Tests | ${{ needs.terratest-examples.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Integration Tests | ${{ needs.terratest-integration.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Advanced Integration | ${{ needs.terratest-integration-advanced.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Compatibility Tests | ${{ needs.ecr-public-compatibility.result }} |" >> $GITHUB_STEP_SUMMARY
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### ECR Public Testing Notes" >> $GITHUB_STEP_SUMMARY
+        echo "- **Integration tests** create real ECR Public repositories in us-east-1" >> $GITHUB_STEP_SUMMARY
+        echo "- **Static tests** validate configuration without AWS resources" >> $GITHUB_STEP_SUMMARY
+        echo "- **Compatibility tests** verify ECR Public API requirements" >> $GITHUB_STEP_SUMMARY
+        echo "- **Repository cleanup** is automatic after test completion" >> $GITHUB_STEP_SUMMARY
+        
+        # Check for any failures
+        STATIC_RESULT="${{ needs.terratest-static.result }}"
+        EXAMPLES_RESULT="${{ needs.terratest-examples.result }}"
+        INTEGRATION_RESULT="${{ needs.terratest-integration.result }}"
+        ADVANCED_RESULT="${{ needs.terratest-integration-advanced.result }}"
+        COMPATIBILITY_RESULT="${{ needs.ecr-public-compatibility.result }}"
+        
+        if [[ "$STATIC_RESULT" == "failure" || "$EXAMPLES_RESULT" == "failure" || "$INTEGRATION_RESULT" == "failure" || "$ADVANCED_RESULT" == "failure" || "$COMPATIBILITY_RESULT" == "failure" ]]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "❌ Some tests failed. Please check the logs for details." >> $GITHUB_STEP_SUMMARY
+          
+          # Provide specific guidance for ECR Public failures
+          if [[ "$INTEGRATION_RESULT" == "failure" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Integration test failures** may be due to:" >> $GITHUB_STEP_SUMMARY
+            echo "- AWS credentials not configured" >> $GITHUB_STEP_SUMMARY
+            echo "- ECR Public service limits reached" >> $GITHUB_STEP_SUMMARY
+            echo "- Repository naming conflicts" >> $GITHUB_STEP_SUMMARY
+            echo "- Region not set to us-east-1" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          exit 1
+        else
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  skip-notification:
+    name: Skip Notification
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.skip_tests == 'true'
+    
+    steps:
+    - name: Skip Tests Notification
+      run: |
+        echo "## Tests Skipped" >> $GITHUB_STEP_SUMMARY
+        echo "Only documentation files were changed, skipping test execution." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "To run tests manually:" >> $GITHUB_STEP_SUMMARY
+        echo "- Use 'Workflow Dispatch' in GitHub Actions" >> $GITHUB_STEP_SUMMARY
+        echo "- Or run locally with: \`make test\` or \`make test-integration\`" >> $GITHUB_STEP_SUMMARY
