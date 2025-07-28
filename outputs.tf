@@ -9,7 +9,7 @@ output "repository_arn" {
 }
 
 output "id" {
-  description = "The repository name."
+  description = "The registry ID where the repository was created."
   value       = aws_ecrpublic_repository.repo.registry_id
 }
 

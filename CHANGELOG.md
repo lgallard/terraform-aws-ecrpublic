@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.4.0...0.5.0) (2025-07-28)
+
+
+### Features
+
+* add Renovate for dependency management ([#18](https://github.com/lgallard/terraform-aws-ecrpublic/issues/18)) ([d3dc2a4](https://github.com/lgallard/terraform-aws-ecrpublic/commit/d3dc2a4a74e625b79bd323e938e6691526883ee6))
+
+
+### Bug Fixes
+
+* standardize Claude Code Review workflow formatting ([24094ea](https://github.com/lgallard/terraform-aws-ecrpublic/commit/24094eaf06c14283cdf1f4d93778a687792e1f4e))
+
 ## [0.4.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.3.0...0.4.0) (2025-07-23)
 
 
