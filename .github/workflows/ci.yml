@@ -12,81 +12,72 @@ on:
         required: false
         default: false
         type: boolean
+      run_security_scans:
+        description: 'Run security scans'
+        required: false
+        default: true
+        type: boolean
 
 jobs:
-  terraform:
-    name: Terraform Checks
+  # Primary validation workflow
+  validate:
+    name: Validate
+    uses: ./.github/workflows/validate.yml
+
+  # Security scanning workflow
+  security:
+    name: Security
+    uses: ./.github/workflows/security.yml
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.run_security_scans != 'false'
+
+  # Quick static tests for pull requests
+  quick-tests:
+    name: Quick Tests
     runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: 1.5.7
-
-    - name: Terraform Format Check
-      run: terraform fmt -check -recursive
-
-    - name: Terraform Init and Validate - Main Module
-      run: |
-        terraform init -backend=false
-        terraform validate
-
-    - name: Terraform Init and Validate - Examples
-      run: |
-        cd examples/using_objects
-        terraform init -backend=false
-        terraform validate
-        cd ../using_variables
-        terraform init -backend=false
-        terraform validate
-
-  terratest:
-    name: Terratest Static Tests
-    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
     - name: Setup Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: '1.21'
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
-        terraform_version: 1.5.7
+        terraform_version: 1.9.0
 
-    - name: Run Static Terratest
+    - name: Run Quick Static Tests
       run: |
         cd test
         go mod tidy
         go test -v -run "TestTerraformValidate|TestTerraformFormat|TestExamplesValidate|TestExamplesFormat" -parallel 4
+      env:
+        TF_IN_AUTOMATION: true
 
-  integration_tests:
-    name: Integration Tests (AWS)
+  # Integration tests for main branch or manual dispatch
+  integration-tests:
+    name: Integration Tests
     runs-on: ubuntu-latest
-    # Only run integration tests on main branch pushes or manual workflow dispatch
-    if: github.ref == 'refs/heads/main' || github.event.inputs.run_integration_tests == 'true'
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_integration_tests == 'true')
+    needs: [validate]
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
     - name: Setup Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: '1.21'
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
-        terraform_version: 1.5.7
+        terraform_version: 1.9.0
         terraform_wrapper: false
 
     - name: Configure AWS credentials
@@ -96,10 +87,47 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
-    - name: Run Integration Tests
+    - name: Run ECR Public Integration Tests
       run: |
         cd test
         go mod tidy
         go test -v -run "TestTerraformECRPublic" -timeout 30m
       env:
+        TF_IN_AUTOMATION: true
         AWS_DEFAULT_REGION: us-east-1
+        TEST_UNIQUE_SUFFIX: ${{ github.run_id }}
+
+  # CI Summary
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [validate, security, quick-tests, integration-tests]
+    if: always()
+    
+    steps:
+    - name: CI Results Summary
+      run: |
+        echo "## CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Workflow | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Validate | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Security | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Quick Tests | ${{ needs.quick-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Integration Tests | ${{ needs.integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### ECR Public Module CI" >> $GITHUB_STEP_SUMMARY
+        echo "- **Validation**: Terraform format, syntax, and ECR Public specific checks" >> $GITHUB_STEP_SUMMARY
+        echo "- **Security**: Infrastructure security scanning with ECR Public considerations" >> $GITHUB_STEP_SUMMARY
+        echo "- **Quick Tests**: Fast static tests for pull request validation" >> $GITHUB_STEP_SUMMARY
+        echo "- **Integration Tests**: Real AWS ECR Public repository creation and testing" >> $GITHUB_STEP_SUMMARY
+        
+        # Check for failures
+        if [[ "${{ needs.validate.result }}" != "success" || "${{ needs.security.result }}" != "success" || "${{ needs.quick-tests.result }}" != "success" || "${{ needs.integration-tests.result }}" != "success" ]]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "❌ CI pipeline has failures. Please review the failed workflows." >> $GITHUB_STEP_SUMMARY
+          exit 1
+        else
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All CI checks passed successfully!" >> $GITHUB_STEP_SUMMARY
+        fi
