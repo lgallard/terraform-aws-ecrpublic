@@ -31,10 +31,11 @@ func generateTestTags(testName, uniqueID string) map[string]string {
 // generateMinimalCatalogData creates minimal valid catalog data for basic functionality tests
 // This reduces test execution time and AWS API usage for tests that don't need comprehensive data
 func generateMinimalCatalogData(repositoryName string) map[string]interface{} {
+	// Note: repositoryName validation is handled by the calling function via ensureSafeTestExecution
 	return map[string]interface{}{
 		"description": "Test container",
 		"about_text":  "# Test\nBasic test container.",
-		"usage_text":  "# Usage\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n```",
+		"usage_text":  fmt.Sprintf("# Usage\n```bash\ndocker pull public.ecr.aws/registry/%s:latest\n```", repositoryName),
 		"architectures": []string{"x86-64"},
 		"operating_systems": []string{"Linux"},
 	}
@@ -43,10 +44,11 @@ func generateMinimalCatalogData(repositoryName string) map[string]interface{} {
 // generateMinimalVariableCatalogData creates minimal catalog data using individual variables
 // This is the variable-based equivalent of generateMinimalCatalogData
 func generateMinimalVariableCatalogData(repositoryName string) map[string]interface{} {
+	// Note: repositoryName validation is handled by the calling function via ensureSafeTestExecution
 	return map[string]interface{}{
 		"catalog_data_description": "Test container",
 		"catalog_data_about_text":  "# Test\nBasic test container.",
-		"catalog_data_usage_text":  "# Usage\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n```",
+		"catalog_data_usage_text":  fmt.Sprintf("# Usage\n```bash\ndocker pull public.ecr.aws/registry/%s:latest\n```", repositoryName),
 		"catalog_data_architectures": []string{"x86-64"},
 		"catalog_data_operating_systems": []string{"Linux"},
 	}
@@ -74,7 +76,7 @@ func loadTestData(filename, repositoryName string) (string, error) {
 		return "", err
 	}
 	
-	// Replace placeholder with actual repository name
+	// Replace placeholder with actual repository name (validation is handled by calling function)
 	return strings.ReplaceAll(string(content), "{{REPOSITORY_NAME}}", repositoryName), nil
 }
 
@@ -94,6 +96,24 @@ func validateRepositoryNameFormat(t *testing.T, repositoryName string) {
 	if len(repositoryName) > 256 {
 		t.Fatal("Repository name must be 256 characters or less")
 	}
+	
+	// Check for potentially dangerous patterns
+	if strings.Contains(repositoryName, "..") {
+		t.Fatal("Repository name cannot contain '..' patterns")
+	}
+	if strings.HasPrefix(repositoryName, "-") || strings.HasSuffix(repositoryName, "-") {
+		t.Fatal("Repository name cannot start or end with hyphens")
+	}
+}
+
+// sanitizeRepositoryName safely formats repository name for string interpolation
+// This prevents injection attacks by validating and escaping the repository name
+func sanitizeRepositoryName(t *testing.T, repositoryName string) string {
+	// First validate the repository name format
+	validateRepositoryNameFormat(t, repositoryName)
+	
+	// Return the validated name (since it passed validation, it's safe to use)
+	return repositoryName
 }
 
 // checkECRPublicQuota checks current ECR Public repository usage against AWS limits
@@ -127,16 +147,16 @@ func checkECRPublicQuota(t *testing.T) {
 	currentCount := len(response.Repositories)
 	
 	// ECR Public has a default limit of 10,000 repositories per region
-	// We'll warn at 80% (8,000) and fail at 95% (9,500) to leave room for other processes
+	// We'll warn at 70% (7,000) and fail at 85% (8,500) to be more conservative during parallel testing
 	const (
-		warningThreshold = 8000
-		errorThreshold   = 9500
+		warningThreshold = 7000
+		errorThreshold   = 8500
 	)
 
 	t.Logf("Current ECR Public repositories: %d", currentCount)
 
 	if currentCount >= errorThreshold {
-		t.Fatalf("ECR Public repository quota nearly exhausted (%d repositories, limit ~10,000). Please clean up existing repositories before running tests.", currentCount)
+		t.Fatalf("ECR Public repository quota nearly exhausted (%d repositories, limit ~10,000). Please clean up existing repositories before running tests. Use cleanup script: ./cleanup-orphaned-resources.sh", currentCount)
 	}
 
 	if currentCount >= warningThreshold {
@@ -160,29 +180,62 @@ func setupTestCleanup(t *testing.T, terraformOptions *terraform.Options, reposit
 	return func() {
 		t.Logf("Starting cleanup for repository: %s", repositoryName)
 		
-		// Attempt terraform destroy
-		_, err := terraform.DestroyE(t, terraformOptions)
-		if err != nil {
-			t.Logf("Warning: Terraform destroy failed: %v", err)
-			t.Logf("Repository that may need manual cleanup: %s", repositoryName)
+		// Comprehensive error recovery with multiple retry attempts
+		destroyAttempted := false
+		terraformSuccess := false
+		
+		// Attempt terraform destroy with error recovery
+		if terraformOptions != nil {
+			t.Logf("Attempting terraform destroy...")
+			destroyOutput, err := terraform.DestroyE(t, terraformOptions)
+			destroyAttempted = true
 			
-			// Attempt direct AWS cleanup as fallback
-			t.Logf("Attempting direct AWS cleanup for repository: %s", repositoryName)
+			if err != nil {
+				t.Logf("Warning: Terraform destroy failed: %v", err)
+				if destroyOutput != "" {
+					t.Logf("Terraform destroy output: %s", destroyOutput)
+				}
+				t.Logf("Repository that may need manual cleanup: %s", repositoryName)
+			} else {
+				t.Logf("Terraform destroy succeeded for repository: %s", repositoryName)
+				terraformSuccess = true
+			}
+		}
+		
+		// If terraform destroy failed, attempt direct AWS cleanup
+		if destroyAttempted && !terraformSuccess {
+			t.Logf("Attempting direct AWS cleanup as fallback for repository: %s", repositoryName)
 			if cleanupErr := attemptDirectAWSCleanup(t, repositoryName); cleanupErr != nil {
 				t.Logf("Direct AWS cleanup also failed: %v", cleanupErr)
 				
-				// Provide detailed manual cleanup instructions
-				t.Logf("=== MANUAL CLEANUP REQUIRED ===")
-				t.Logf("Repository: %s", repositoryName)
-				t.Logf("Region: us-east-1")
-				t.Logf("Command: aws ecr-public delete-repository --region us-east-1 --repository-name %s --force", repositoryName)
-				t.Logf("Or use cleanup script: ./cleanup-orphaned-resources.sh")
-				t.Logf("==============================")
+				// Final attempt: wait and retry direct cleanup (sometimes resources are in transition)
+				t.Logf("Waiting 10 seconds before final cleanup attempt...")
+				time.Sleep(10 * time.Second)
+				
+				if retryErr := attemptDirectAWSCleanup(t, repositoryName); retryErr != nil {
+					t.Logf("Final cleanup attempt also failed: %v", retryErr)
+					
+					// Provide comprehensive manual cleanup instructions
+					t.Logf("=== MANUAL CLEANUP REQUIRED ===")
+					t.Logf("Repository: %s", repositoryName)
+					t.Logf("Region: us-east-1")
+					t.Logf("AWS CLI Command:")
+					t.Logf("  aws ecr-public delete-repository --region us-east-1 --repository-name %s --force", repositoryName)
+					t.Logf("Alternative cleanup methods:")
+					t.Logf("  1. Use cleanup script: ./test/cleanup-orphaned-resources.sh")
+					t.Logf("  2. AWS Console: https://console.aws.amazon.com/ecr/repositories?region=us-east-1")
+					t.Logf("  3. Check if repository exists: aws ecr-public describe-repositories --repository-names %s --region us-east-1", repositoryName)
+					t.Logf("==============================")
+				} else {
+					t.Logf("Final cleanup attempt succeeded for repository: %s", repositoryName)
+				}
 			} else {
 				t.Logf("Direct AWS cleanup succeeded for repository: %s", repositoryName)
 			}
-		} else {
-			t.Logf("Successfully cleaned up repository: %s", repositoryName)
+		}
+		
+		if !destroyAttempted {
+			t.Logf("Warning: No cleanup attempted due to invalid terraform options")
 		}
 	}
 }

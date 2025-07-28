@@ -30,35 +30,20 @@ func TestECRPublicGalleryOptimization(t *testing.T) {
 			"repository_name": repositoryName,
 			"catalog_data": map[string]interface{}{
 				"description": "Production-ready Node.js application container optimized for ECR Public Gallery discoverability",
-				"about_text": `# ` + repositoryName + `
-
-## Description
-
-This container provides a production-ready Node.js application environment optimized for the ECR Public Gallery with comprehensive documentation and best practices.
-
-## Features
-
-- **Security Hardening**: Non-root user execution and minimal attack surface
-- **Multi-Architecture**: Supports x86-64 and ARM 64 architectures
-- **Performance Optimized**: Fast startup and efficient resource usage
-- **Health Monitoring**: Built-in health checks and metrics
-- **Production Ready**: Comprehensive logging and error handling
-
-## Use Cases
-
-- Web applications and APIs
-- Microservices deployments
-- Serverless containers
-- Development environments
-- CI/CD pipelines
-
-## Security
-
-- Runs as non-root user for security
-- Regular security updates
-- Minimal base image to reduce attack surface
-- No sensitive data in image layers`,
-				"usage_text":        "# Usage Instructions\n\n## Quick Start\n\n```bash\n# Pull the latest image\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n\n# Run with default configuration\ndocker run -p 3000:3000 public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Production Usage\n\n```bash\n# Production deployment\ndocker run -d \\\n  --name " + repositoryName + " \\\n  --restart unless-stopped \\\n  -p 3000:3000 \\\n  -e NODE_ENV=production \\\n  public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Kubernetes Deployment\n\n```yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: " + repositoryName + "\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: " + repositoryName + "\n  template:\n    metadata:\n      labels:\n        app: " + repositoryName + "\n    spec:\n      containers:\n      - name: app\n        image: public.ecr.aws/registry/" + repositoryName + ":latest\n        ports:\n        - containerPort: 3000\n        livenessProbe:\n          httpGet:\n            path: /health\n            port: 3000\n```\n\n## Environment Variables\n\n- `NODE_ENV`: Environment mode (development/production)\n- `PORT`: Application port (default: 3000)\n- `LOG_LEVEL`: Logging level (debug/info/warn/error)\n\n## Health Checks\n\n```bash\ncurl http://localhost:3000/health\n```",
+				"about_text": func() string {
+					data, err := loadTestData("gallery_optimization_about.md", repositoryName)
+					if err != nil {
+						t.Fatalf("Failed to load test data: %v", err)
+					}
+					return data
+				}(),
+				"usage_text": func() string {
+					data, err := loadTestData("gallery_optimization_usage.md", repositoryName)
+					if err != nil {
+						t.Fatalf("Failed to load test data: %v", err)
+					}
+					return data
+				}(),
 				"architectures":     []string{"x86-64", "ARM 64"},
 				"operating_systems": []string{"Linux"},
 			},
@@ -98,7 +83,13 @@ func TestECRPublicGallerySearchability(t *testing.T) {
 			"repository_name":                repositoryName,
 			"catalog_data_description":       "Open-source Python web framework container with Flask, Django support, and development tools",
 			"catalog_data_about_text":        "# Python Web Framework Container\n\n## Overview\nA comprehensive Python container optimized for web development with popular frameworks.\n\n## Supported Frameworks\n- **Flask**: Lightweight WSGI web application framework\n- **Django**: High-level Python web framework\n- **FastAPI**: Modern, fast web framework for building APIs\n\n## Keywords\nPython, Flask, Django, FastAPI, web development, API, microservices, REST, GraphQL, WSGI, ASGI",
-			"catalog_data_usage_text":        "# Python Web Development\n\n## Flask Application\n```bash\ndocker run -p 5000:5000 -v $(pwd):/app public.ecr.aws/registry/" + repositoryName + ":latest python app.py\n```\n\n## Django Application\n```bash\ndocker run -p 8000:8000 -v $(pwd):/app public.ecr.aws/registry/" + repositoryName + ":latest python manage.py runserver 0.0.0.0:8000\n```\n\n## FastAPI Application\n```bash\ndocker run -p 8000:8000 -v $(pwd):/app public.ecr.aws/registry/" + repositoryName + ":latest uvicorn main:app --host 0.0.0.0 --port 8000\n```",
+			"catalog_data_usage_text": func() string {
+				data, err := loadTestData("python_web_usage.md", repositoryName)
+				if err != nil {
+					t.Fatalf("Failed to load test data: %v", err)
+				}
+				return data
+			}(),
 			"catalog_data_architectures":     []string{"x86-64", "ARM 64"},
 			"catalog_data_operating_systems": []string{"Linux"},
 		},

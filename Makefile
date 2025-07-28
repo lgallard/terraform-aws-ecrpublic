@@ -26,37 +26,37 @@ test-static:
 test-integration:
 	@echo "Running basic integration tests (requires AWS credentials)..."
 	@echo "⚠️  This will create real AWS resources and may incur costs!"
-	@cd test && go mod tidy && go test -v -run "TestTerraformECRPublicBasic|TestTerraformECRPublicWithVariableCatalogData|TestTerraformECRPublicWithObjectCatalogData" -timeout 15m -parallel 1
+	@cd test && go mod tidy && go test -v -run "TestTerraformECRPublicBasic|TestTerraformECRPublicWithVariableCatalogData|TestTerraformECRPublicWithObjectCatalogData" -timeout 10m -parallel 1
 
 # Test Catalog Data - run catalog data validation tests (requires AWS credentials)
 test-catalog:
 	@echo "Running catalog data validation tests (requires AWS credentials)..."
 	@echo "⚠️  This will create real AWS resources and may incur costs!"
-	@cd test && go mod tidy && go test -v -run "TestECRPublicCatalogData|TestECRPublicMinimalCatalogData|TestECRPublicComprehensiveCatalogData" -timeout 15m -parallel 1
+	@cd test && go mod tidy && go test -v -run "TestECRPublicCatalogData|TestECRPublicMinimalCatalogData|TestECRPublicComprehensiveCatalogData" -timeout 10m -parallel 1
 
 # Test Gallery - run public gallery compliance tests (requires AWS credentials)
 test-gallery:
 	@echo "Running public gallery compliance tests (requires AWS credentials)..."
 	@echo "⚠️  This will create real AWS resources and may incur costs!"
-	@cd test && go mod tidy && go test -v -run "TestECRPublicGallery" -timeout 15m -parallel 1
+	@cd test && go mod tidy && go test -v -run "TestECRPublicGallery" -timeout 10m -parallel 1
 
 # Test All Integration - run all integration tests (requires AWS credentials)
 test-all:
 	@echo "Running comprehensive integration test suite (requires AWS credentials)..."
 	@echo "⚠️  This will create real AWS resources and may incur costs!"
-	@cd test && go mod tidy && go test -v -timeout 15m -parallel 1
+	@cd test && go mod tidy && go test -v -timeout 10m -parallel 1
 
 # Test Timeouts - run timeout configuration tests (requires AWS credentials)
 test-timeouts:
 	@echo "Running timeout configuration tests (requires AWS credentials)..."
 	@echo "⚠️  This will create real AWS resources and may incur costs!"
-	@cd test && go mod tidy && go test -v -run "TestTerraformECRPublicWithTimeouts|TestTerraformECRPublicCompleteConfiguration" -timeout 15m -parallel 1
+	@cd test && go mod tidy && go test -v -run "TestTerraformECRPublicWithTimeouts|TestTerraformECRPublicCompleteConfiguration" -timeout 10m -parallel 1
 
 # Test Validation - run variable validation tests (requires AWS credentials)
 test-validation:
 	@echo "Running variable validation tests (requires AWS credentials)..."
 	@echo "⚠️  This will create real AWS resources and may incur costs!"
-	@cd test && go mod tidy && go test -v -run "TestTerraformECRPublicVariableValidation|TestECRPublicMultiArchitectureSupport" -timeout 15m -parallel 1
+	@cd test && go mod tidy && go test -v -run "TestTerraformECRPublicVariableValidation|TestECRPublicMultiArchitectureSupport" -timeout 10m -parallel 1
 
 # Check - run all static checks (recommended for development)
 check: fmt-check validate test-static
