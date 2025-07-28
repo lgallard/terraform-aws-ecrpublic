@@ -29,9 +29,15 @@ echo -e "${BLUE}Max age: ${MAX_AGE_HOURS} hours${NC}"
 echo -e "${BLUE}Dry run: ${DRY_RUN}${NC}"
 echo ""
 
-# Check if AWS CLI is available
+# Check if required tools are available
 if ! command -v aws &> /dev/null; then
     echo -e "${RED}Error: AWS CLI is not installed or not in PATH${NC}"
+    exit 1
+fi
+
+if ! command -v jq &> /dev/null; then
+    echo -e "${RED}Error: jq is not installed or not in PATH${NC}"
+    echo "Please install jq: https://stedolan.github.io/jq/download/"
     exit 1
 fi
 
@@ -41,7 +47,7 @@ if ! aws sts get-caller-identity &> /dev/null; then
     exit 1
 fi
 
-echo -e "${GREEN}✓ AWS CLI and credentials verified${NC}"
+echo -e "${GREEN}✓ AWS CLI, jq, and credentials verified${NC}"
 
 # Function to check if a repository is older than max age
 is_repository_old() {

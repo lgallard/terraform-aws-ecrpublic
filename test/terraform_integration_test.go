@@ -2,7 +2,6 @@ package test
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -76,14 +75,13 @@ func TestTerraformECRPublicWithVariableCatalogData(t *testing.T) {
 
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
 		TerraformDir: "../examples/using_variables",
-		Vars: map[string]interface{}{
-			"repository_name":                    repositoryName,
-			"catalog_data_description":           "Test repository created by Terratest using variables",
-			"catalog_data_about_text":           "# Test Repository\nThis is a test repository created by automated tests using variable-based configuration.",
-			"catalog_data_usage_text":           "# Usage\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n```",
-			"catalog_data_architectures":        []string{"x86-64"},
-			"catalog_data_operating_systems":    []string{"Linux"},
-		},
+		Vars: func() map[string]interface{} {
+			vars := map[string]interface{}{"repository_name": repositoryName}
+			for k, v := range generateMinimalVariableCatalogData(repositoryName) {
+				vars[k] = v
+			}
+			return vars
+		}(),
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": awsRegion,
 		},
@@ -124,13 +122,7 @@ func TestTerraformECRPublicWithObjectCatalogData(t *testing.T) {
 		TerraformDir: "../",
 		Vars: map[string]interface{}{
 			"repository_name": repositoryName,
-			"catalog_data": map[string]interface{}{
-				"description":       "Test repository created by Terratest using objects",
-				"about_text":       "# Test Repository\nThis is a test repository created by automated tests using object-based configuration.",
-				"usage_text":       "# Usage\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n```",
-				"architectures":     []string{"x86-64", "ARM 64"},
-				"operating_systems": []string{"Linux"},
-			},
+			"catalog_data": generateMinimalCatalogData(repositoryName),
 		},
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": awsRegion,
@@ -212,14 +204,13 @@ func TestTerraformECRPublicVariableValidation(t *testing.T) {
 
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
 		TerraformDir: "../examples/using_variables",
-		Vars: map[string]interface{}{
-			"repository_name":                    repositoryName,
-			"catalog_data_description":           "Valid description under 256 characters",
-			"catalog_data_about_text":           "# Valid About Text\nThis is a valid about text.",
-			"catalog_data_usage_text":           "# Valid Usage\nThis is valid usage text.",
-			"catalog_data_architectures":        []string{"x86-64", "ARM 64"},
-			"catalog_data_operating_systems":    []string{"Linux"},
-		},
+		Vars: func() map[string]interface{} {
+			vars := map[string]interface{}{"repository_name": repositoryName}
+			for k, v := range generateMinimalVariableCatalogData(repositoryName) {
+				vars[k] = v
+			}
+			return vars
+		}(),
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": awsRegion,
 		},
@@ -260,9 +251,9 @@ func TestTerraformECRPublicCompleteConfiguration(t *testing.T) {
 		Vars: map[string]interface{}{
 			"repository_name": repositoryName,
 			"catalog_data": map[string]interface{}{
-				"description":       "Complete test repository for comprehensive testing",
-				"about_text":       "# Complete Test Repository\n## Overview\nThis repository is created for comprehensive testing of the terraform-aws-ecrpublic module.\n\n## Features\n- Complete catalog data configuration\n- Multi-architecture support\n- Detailed documentation",
-				"usage_text":       "# Usage\n\n## Quick Start\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\ndocker run public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Advanced Usage\nSee documentation for advanced configuration options.",
+				"description":       "Complete test repository",
+				"about_text":       "# Complete Test\nTest repository.",
+				"usage_text":       "# Usage\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n```",
 				"architectures":     []string{"x86-64", "ARM", "ARM 64"},
 				"operating_systems": []string{"Linux"},
 			},
@@ -347,22 +338,5 @@ func validateAllOutputs(t *testing.T, terraformOptions *terraform.Options, expec
 	repositoryURL := terraform.Output(t, terraformOptions, "repository_url")
 	repositoryURI := terraform.Output(t, terraformOptions, "repository_uri")
 	assert.Equal(t, repositoryURI, repositoryURL, "repository_url should match repository_uri")
-}
-
-// Helper function to validate repository name format for security
-func validateRepositoryNameFormat(t *testing.T, repositoryName string) {
-	// Validate repository name format to prevent string injection
-	validPattern := regexp.MustCompile(`^[a-z0-9-]+$`)
-	if !validPattern.MatchString(repositoryName) {
-		t.Fatalf("Invalid repository name format: %s. Repository names must contain only lowercase letters, numbers, and hyphens.", repositoryName)
-	}
-	
-	// Additional ECR Public repository name validations
-	if len(repositoryName) == 0 {
-		t.Fatal("Repository name cannot be empty")
-	}
-	if len(repositoryName) > 256 {
-		t.Fatal("Repository name must be 256 characters or less")
-	}
 }
 

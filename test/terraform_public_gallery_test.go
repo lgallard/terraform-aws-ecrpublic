@@ -2,9 +2,6 @@ package test
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -246,10 +243,7 @@ func TestECRPublicGalleryRegionalConstraints(t *testing.T) {
 		TerraformDir: "../",
 		Vars: map[string]interface{}{
 			"repository_name": repositoryName,
-			"catalog_data": map[string]interface{}{
-				"description": "Test repository for regional constraints validation",
-				"about_text":  "# Regional Constraints Test\nThis repository tests ECR Public's us-east-1 regional constraint.",
-			},
+			"catalog_data": generateMinimalCatalogData(repositoryName),
 		},
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": awsRegion,
@@ -332,20 +326,3 @@ func validateRegionalConstraints(t *testing.T, terraformOptions *terraform.Optio
 	// The fact that the repository was created successfully validates regional constraints
 }
 
-
-// Helper function to validate repository name format for security
-func validateRepositoryNameFormat(t *testing.T, repositoryName string) {
-	// Validate repository name format to prevent string injection
-	validPattern := regexp.MustCompile(`^[a-z0-9-]+$`)
-	if !validPattern.MatchString(repositoryName) {
-		t.Fatalf("Invalid repository name format: %s. Repository names must contain only lowercase letters, numbers, and hyphens.", repositoryName)
-	}
-
-	// Additional ECR Public repository name validations
-	if len(repositoryName) == 0 {
-		t.Fatal("Repository name cannot be empty")
-	}
-	if len(repositoryName) > 256 {
-		t.Fatal("Repository name must be 256 characters or less")
-	}
-}

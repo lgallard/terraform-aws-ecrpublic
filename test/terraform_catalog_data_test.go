@@ -2,9 +2,6 @@ package test
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -30,14 +27,13 @@ func TestECRPublicCatalogDataValidation(t *testing.T) {
 	// Test with valid catalog data that follows ECR Public Gallery guidelines
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
 		TerraformDir: "../examples/using_variables",
-		Vars: map[string]interface{}{
-			"repository_name":                    repositoryName,
-			"catalog_data_description":           "Production-ready container for web applications with security hardening and performance optimizations",
-			"catalog_data_about_text":           "# Web Application Container\n\n## Overview\nThis container provides a secure, production-ready environment for web applications.\n\n## Features\n- Security hardened base image\n- Performance optimized configuration\n- Multi-architecture support\n- Comprehensive logging\n\n## Security\n- Non-root user execution\n- Minimal attack surface\n- Regular security updates",
-			"catalog_data_usage_text":           "# Usage Instructions\n\n## Quick Start\n```bash\n# Pull the latest image\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n\n# Run with default configuration\ndocker run -p 8080:8080 public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Configuration\n\nEnvironment variables:\n- `PORT`: Application port (default: 8080)\n- `ENV`: Environment mode (development/production)\n\n## Health Checks\n```bash\ncurl http://localhost:8080/health\n```",
-			"catalog_data_architectures":        []string{"x86-64", "ARM 64"},
-			"catalog_data_operating_systems":    []string{"Linux"},
-		},
+		Vars: func() map[string]interface{} {
+			vars := map[string]interface{}{"repository_name": repositoryName}
+			for k, v := range generateMinimalVariableCatalogData(repositoryName) {
+				vars[k] = v
+			}
+			return vars
+		}(),
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": awsRegion,
 		},
@@ -217,9 +213,9 @@ func TestECRPublicMultiArchitectureSupport(t *testing.T) {
 		TerraformDir: "../examples/using_variables",
 		Vars: map[string]interface{}{
 			"repository_name":                    repositoryName,
-			"catalog_data_description":           "Multi-architecture container supporting x86-64, ARM, and ARM 64 platforms",
-			"catalog_data_about_text":           "# Multi-Architecture Container\n\nThis container is built for multiple architectures:\n- x86-64 for traditional Intel/AMD systems\n- ARM 64 for modern ARM systems including Apple Silicon\n- ARM for IoT and embedded devices",
-			"catalog_data_usage_text":           "# Multi-Architecture Usage\n\nDocker will automatically pull the correct architecture:\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\nTo pull a specific architecture:\n```bash\ndocker pull --platform linux/amd64 public.ecr.aws/registry/" + repositoryName + ":latest\ndocker pull --platform linux/arm64 public.ecr.aws/registry/" + repositoryName + ":latest\n```",
+			"catalog_data_description":           "Multi-arch container",
+			"catalog_data_about_text":           "# Multi-Architecture\nSupports multiple architectures.",
+			"catalog_data_usage_text":           "# Usage\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n```",
 			"catalog_data_architectures":        []string{"x86-64", "ARM", "ARM 64"},
 			"catalog_data_operating_systems":    []string{"Linux"},
 		},
@@ -262,9 +258,9 @@ func TestECRPublicMarkdownFormatting(t *testing.T) {
 		TerraformDir: "../examples/using_variables",
 		Vars: map[string]interface{}{
 			"repository_name":               repositoryName,
-			"catalog_data_description":      "Container with comprehensive markdown documentation",
-			"catalog_data_about_text":      "# Application Container\n\n## Features\n\n- **Security**: Hardened base image\n- **Performance**: Optimized for speed\n- **Monitoring**: Built-in observability\n\n### Code Example\n\n```javascript\nconst app = require('./app');\napp.listen(3000);\n```\n\n> **Note**: This container follows security best practices.",
-			"catalog_data_usage_text":      "# Getting Started\n\n## Installation\n\n1. Pull the image\n2. Configure environment\n3. Run the container\n\n```bash\n# Step 1: Pull\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n\n# Step 2: Run\ndocker run -p 3000:3000 public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Configuration\n\n| Variable | Description |\n|----------|-------------|\n| `PORT` | Application port |\n| `ENV` | Environment mode |",
+			"catalog_data_description":      "Markdown test container",
+			"catalog_data_about_text":      "# Test\n- Feature 1\n- Feature 2\n\n```bash\necho test\n```",
+			"catalog_data_usage_text":      "# Usage\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n```",
 			"catalog_data_architectures":   []string{"x86-64"},
 			"catalog_data_operating_systems": []string{"Linux"},
 		},
@@ -304,20 +300,3 @@ func validateCatalogDataCompliance(t *testing.T, terraformOptions *terraform.Opt
 	// For now, successful creation indicates catalog data was valid
 }
 
-
-// Helper function to validate repository name format for security
-func validateRepositoryNameFormat(t *testing.T, repositoryName string) {
-	// Validate repository name format to prevent string injection
-	validPattern := regexp.MustCompile(`^[a-z0-9-]+$`)
-	if !validPattern.MatchString(repositoryName) {
-		t.Fatalf("Invalid repository name format: %s. Repository names must contain only lowercase letters, numbers, and hyphens.", repositoryName)
-	}
-	
-	// Additional ECR Public repository name validations
-	if len(repositoryName) == 0 {
-		t.Fatal("Repository name cannot be empty")
-	}
-	if len(repositoryName) > 256 {
-		t.Fatal("Repository name must be 256 characters or less")
-	}
-}

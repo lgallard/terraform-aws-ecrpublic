@@ -2,7 +2,7 @@ resource "aws_ecrpublic_repository" "repo" {
 
   repository_name = var.repository_name
 
-  # Image scanning configuration
+  # Catalog data configuration
   dynamic "catalog_data" {
     for_each = local.catalog_data
     content {
