@@ -18,7 +18,7 @@ func TestECRPublicGalleryOptimization(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-gallery-opt-%s", uniqueID)
-	
+
 	// Validate repository name format for security
 	validateRepositoryNameFormat(t, repositoryName)
 
@@ -59,69 +59,7 @@ This container provides a production-ready Node.js application environment optim
 - Regular security updates
 - Minimal base image to reduce attack surface
 - No sensitive data in image layers`,
-				"usage_text": `# Usage Instructions
-
-## Quick Start
-
-\`\`\`bash
-# Pull the latest image
-docker pull public.ecr.aws/registry/` + repositoryName + `:latest
-
-# Run with default configuration
-docker run -p 3000:3000 public.ecr.aws/registry/` + repositoryName + `:latest
-\`\`\`
-
-## Production Usage
-
-\`\`\`bash
-# Production deployment
-docker run -d \\
-  --name ` + repositoryName + ` \\
-  --restart unless-stopped \\
-  -p 3000:3000 \\
-  -e NODE_ENV=production \\
-  public.ecr.aws/registry/` + repositoryName + `:latest
-\`\`\`
-
-## Kubernetes Deployment
-
-\`\`\`yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ` + repositoryName + `
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: ` + repositoryName + `
-  template:
-    metadata:
-      labels:
-        app: ` + repositoryName + `
-    spec:
-      containers:
-      - name: app
-        image: public.ecr.aws/registry/` + repositoryName + `:latest
-        ports:
-        - containerPort: 3000
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-\`\`\`
-
-## Environment Variables
-
-- \`NODE_ENV\`: Environment mode (development/production)
-- \`PORT\`: Application port (default: 3000)
-- \`LOG_LEVEL\`: Logging level (debug/info/warn/error)
-
-## Health Checks
-
-\`\`\`bash
-curl http://localhost:3000/health
-\`\`\``,
+				"usage_text":        "# Usage Instructions\n\n## Quick Start\n\n```bash\n# Pull the latest image\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n\n# Run with default configuration\ndocker run -p 3000:3000 public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Production Usage\n\n```bash\n# Production deployment\ndocker run -d \\\n  --name " + repositoryName + " \\\n  --restart unless-stopped \\\n  -p 3000:3000 \\\n  -e NODE_ENV=production \\\n  public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Kubernetes Deployment\n\n```yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: " + repositoryName + "\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: " + repositoryName + "\n  template:\n    metadata:\n      labels:\n        app: " + repositoryName + "\n    spec:\n      containers:\n      - name: app\n        image: public.ecr.aws/registry/" + repositoryName + ":latest\n        ports:\n        - containerPort: 3000\n        livenessProbe:\n          httpGet:\n            path: /health\n            port: 3000\n```\n\n## Environment Variables\n\n- `NODE_ENV`: Environment mode (development/production)\n- `PORT`: Application port (default: 3000)\n- `LOG_LEVEL`: Logging level (debug/info/warn/error)\n\n## Health Checks\n\n```bash\ncurl http://localhost:3000/health\n```",
 				"architectures":     []string{"x86-64", "ARM 64"},
 				"operating_systems": []string{"Linux"},
 			},
@@ -153,7 +91,7 @@ func TestECRPublicGallerySearchability(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-searchable-%s", uniqueID)
-	
+
 	// Validate repository name format for security
 	validateRepositoryNameFormat(t, repositoryName)
 
@@ -163,12 +101,12 @@ func TestECRPublicGallerySearchability(t *testing.T) {
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
 		TerraformDir: "../examples/using_variables",
 		Vars: map[string]interface{}{
-			"repository_name":                    repositoryName,
-			"catalog_data_description":           "Open-source Python web framework container with Flask, Django support, and development tools",
-			"catalog_data_about_text":           "# Python Web Framework Container\n\n## Overview\nA comprehensive Python container optimized for web development with popular frameworks.\n\n## Supported Frameworks\n- **Flask**: Lightweight WSGI web application framework\n- **Django**: High-level Python web framework\n- **FastAPI**: Modern, fast web framework for building APIs\n\n## Keywords\nPython, Flask, Django, FastAPI, web development, API, microservices, REST, GraphQL, WSGI, ASGI",
-			"catalog_data_usage_text":           "# Python Web Development\n\n## Flask Application\n```bash\ndocker run -p 5000:5000 -v $(pwd):/app public.ecr.aws/registry/" + repositoryName + ":latest python app.py\n```\n\n## Django Application\n```bash\ndocker run -p 8000:8000 -v $(pwd):/app public.ecr.aws/registry/" + repositoryName + ":latest python manage.py runserver 0.0.0.0:8000\n```\n\n## FastAPI Application\n```bash\ndocker run -p 8000:8000 -v $(pwd):/app public.ecr.aws/registry/" + repositoryName + ":latest uvicorn main:app --host 0.0.0.0 --port 8000\n```",
-			"catalog_data_architectures":        []string{"x86-64", "ARM 64"},
-			"catalog_data_operating_systems":    []string{"Linux"},
+			"repository_name":                repositoryName,
+			"catalog_data_description":       "Open-source Python web framework container with Flask, Django support, and development tools",
+			"catalog_data_about_text":        "# Python Web Framework Container\n\n## Overview\nA comprehensive Python container optimized for web development with popular frameworks.\n\n## Supported Frameworks\n- **Flask**: Lightweight WSGI web application framework\n- **Django**: High-level Python web framework\n- **FastAPI**: Modern, fast web framework for building APIs\n\n## Keywords\nPython, Flask, Django, FastAPI, web development, API, microservices, REST, GraphQL, WSGI, ASGI",
+			"catalog_data_usage_text":        "# Python Web Development\n\n## Flask Application\n```bash\ndocker run -p 5000:5000 -v $(pwd):/app public.ecr.aws/registry/" + repositoryName + ":latest python app.py\n```\n\n## Django Application\n```bash\ndocker run -p 8000:8000 -v $(pwd):/app public.ecr.aws/registry/" + repositoryName + ":latest python manage.py runserver 0.0.0.0:8000\n```\n\n## FastAPI Application\n```bash\ndocker run -p 8000:8000 -v $(pwd):/app public.ecr.aws/registry/" + repositoryName + ":latest uvicorn main:app --host 0.0.0.0 --port 8000\n```",
+			"catalog_data_architectures":     []string{"x86-64", "ARM 64"},
+			"catalog_data_operating_systems": []string{"Linux"},
 		},
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": awsRegion,
@@ -197,7 +135,7 @@ func TestECRPublicGalleryContentGuidelines(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-guidelines-%s", uniqueID)
-	
+
 	// Validate repository name format for security
 	validateRepositoryNameFormat(t, repositoryName)
 
@@ -257,180 +195,7 @@ This image follows enterprise architecture patterns:
 - **PostgreSQL/MySQL**: Database connectivity
 - **Redis**: Caching and session management
 - **Kafka**: Event streaming support`,
-				"usage_text": `# Usage Guide
-
-## Basic Spring Boot Application
-
-\`\`\`bash
-# Run a basic Spring Boot application
-docker run -p 8080:8080 \\
-  -v $(pwd)/app.jar:/app/application.jar \\
-  public.ecr.aws/registry/` + repositoryName + `:latest
-\`\`\`
-
-## Production Deployment
-
-\`\`\`bash
-# Production deployment with environment configuration
-docker run -d \\
-  --name java-app \\
-  --restart unless-stopped \\
-  -p 8080:8080 \\
-  -e SPRING_PROFILES_ACTIVE=production \\
-  -e JAVA_OPTS="-Xmx2g -Xms1g" \\
-  -e DATABASE_URL="jdbc:postgresql://db:5432/myapp" \\
-  -v /app/logs:/opt/app/logs \\
-  -v $(pwd)/application.jar:/app/application.jar \\
-  public.ecr.aws/registry/` + repositoryName + `:latest
-\`\`\`
-
-## Docker Compose Setup
-
-\`\`\`yaml
-version: '3.8'
-services:
-  app:
-    image: public.ecr.aws/registry/` + repositoryName + `:latest
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=production
-      - DATABASE_URL=jdbc:postgresql://db:5432/myapp
-      - REDIS_URL=redis://redis:6379
-    volumes:
-      - ./app.jar:/app/application.jar
-      - ./logs:/opt/app/logs
-    depends_on:
-      - db
-      - redis
-      
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: myapp
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      
-  redis:
-    image: redis:7-alpine
-\`\`\`
-
-## Kubernetes Deployment
-
-\`\`\`yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: java-app
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: java-app
-  template:
-    metadata:
-      labels:
-        app: java-app
-    spec:
-      containers:
-      - name: app
-        image: public.ecr.aws/registry/` + repositoryName + `:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: "kubernetes"
-        - name: JAVA_OPTS
-          value: "-Xmx2g -Xms1g -XX:+UseG1GC"
-        resources:
-          requests:
-            memory: "1Gi"
-            cpu: "500m"
-          limits:
-            memory: "3Gi"
-            cpu: "2"
-        livenessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 8080
-          initialDelaySeconds: 60
-          periodSeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /actuator/health/readiness
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        volumeMounts:
-        - name: app-jar
-          mountPath: /app/application.jar
-          subPath: application.jar
-      volumes:
-      - name: app-jar
-        configMap:
-          name: app-config
-\`\`\`
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| \`SPRING_PROFILES_ACTIVE\` | Active Spring profiles | default | No |
-| \`JAVA_OPTS\` | JVM options | -Xmx1g -Xms512m | No |  
-| \`DATABASE_URL\` | Database connection URL | - | Yes |
-| \`REDIS_URL\` | Redis connection URL | - | No |
-| \`LOG_LEVEL\` | Application log level | INFO | No |
-
-### Health Monitoring
-
-\`\`\`bash
-# Application health
-curl http://localhost:8080/actuator/health
-
-# Readiness check  
-curl http://localhost:8080/actuator/health/readiness
-
-# Metrics endpoint
-curl http://localhost:8080/actuator/metrics
-\`\`\`
-
-## Security Best Practices
-
-### Non-root User
-\`\`\`bash
-# Verify non-root execution
-docker exec container-name id
-# Output: uid=1001(appuser) gid=1001(appuser)
-\`\`\`
-
-### Vulnerability Scanning
-\`\`\`bash
-# Scan for vulnerabilities
-docker scout cves public.ecr.aws/registry/` + repositoryName + `:latest
-\`\`\`
-
-## Troubleshooting
-
-### Memory Issues
-\`\`\`bash
-# Increase heap size
-docker run -e JAVA_OPTS="-Xmx4g -Xms2g" public.ecr.aws/registry/` + repositoryName + `:latest
-\`\`\`
-
-### Debug Mode
-\`\`\`bash
-# Enable debug logging
-docker run -e LOG_LEVEL=DEBUG public.ecr.aws/registry/` + repositoryName + `:latest
-\`\`\`
-
-### JVM Analysis
-\`\`\`bash
-# Enable JVM debugging
-docker run -e JAVA_OPTS="-XX:+PrintGCDetails -XX:+PrintGCTimeStamps" \\
-  public.ecr.aws/registry/` + repositoryName + `:latest
-\`\`\``,
+				"usage_text":        "# Usage Guide\n\n## Basic Spring Boot Application\n\n```bash\n# Run a basic Spring Boot application\ndocker run -p 8080:8080 \\\n  -v $(pwd)/app.jar:/app/application.jar \\\n  public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Production Deployment\n\n```bash\n# Production deployment with environment configuration\ndocker run -d \\\n  --name java-app \\\n  --restart unless-stopped \\\n  -p 8080:8080 \\\n  -e SPRING_PROFILES_ACTIVE=production \\\n  -e JAVA_OPTS=\"-Xmx2g -Xms1g\" \\\n  -e DATABASE_URL=\"jdbc:postgresql://db:5432/myapp\" \\\n  -v /app/logs:/opt/app/logs \\\n  -v $(pwd)/application.jar:/app/application.jar \\\n  public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Docker Compose Setup\n\n```yaml\nversion: '3.8'\nservices:\n  app:\n    image: public.ecr.aws/registry/" + repositoryName + ":latest\n    ports:\n      - \"8080:8080\"\n    environment:\n      - SPRING_PROFILES_ACTIVE=production\n      - DATABASE_URL=jdbc:postgresql://db:5432/myapp\n      - REDIS_URL=redis://redis:6379\n    volumes:\n      - ./app.jar:/app/application.jar\n      - ./logs:/opt/app/logs\n    depends_on:\n      - db\n      - redis\n      \n  db:\n    image: postgres:15\n    environment:\n      POSTGRES_DB: myapp\n      POSTGRES_USER: user\n      POSTGRES_PASSWORD: password\n      \n  redis:\n    image: redis:7-alpine\n```\n\n## Kubernetes Deployment\n\n```yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: java-app\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: java-app\n  template:\n    metadata:\n      labels:\n        app: java-app\n    spec:\n      containers:\n      - name: app\n        image: public.ecr.aws/registry/" + repositoryName + ":latest\n        ports:\n        - containerPort: 8080\n        env:\n        - name: SPRING_PROFILES_ACTIVE\n          value: \"kubernetes\"\n        - name: JAVA_OPTS\n          value: \"-Xmx2g -Xms1g -XX:+UseG1GC\"\n        resources:\n          requests:\n            memory: \"1Gi\"\n            cpu: \"500m\"\n          limits:\n            memory: \"3Gi\"\n            cpu: \"2\"\n        livenessProbe:\n          httpGet:\n            path: /actuator/health\n            port: 8080\n          initialDelaySeconds: 60\n          periodSeconds: 30\n        readinessProbe:\n          httpGet:\n            path: /actuator/health/readiness\n            port: 8080\n          initialDelaySeconds: 30\n          periodSeconds: 10\n        volumeMounts:\n        - name: app-jar\n          mountPath: /app/application.jar\n          subPath: application.jar\n      volumes:\n      - name: app-jar\n        configMap:\n          name: app-config\n```\n\n## Configuration\n\n### Environment Variables\n\n| Variable | Description | Default | Required |\n|----------|-------------|---------|----------|\n| `SPRING_PROFILES_ACTIVE` | Active Spring profiles | default | No |\n| `JAVA_OPTS` | JVM options | -Xmx1g -Xms512m | No |  \n| `DATABASE_URL` | Database connection URL | - | Yes |\n| `REDIS_URL` | Redis connection URL | - | No |\n| `LOG_LEVEL` | Application log level | INFO | No |\n\n### Health Monitoring\n\n```bash\n# Application health\ncurl http://localhost:8080/actuator/health\n\n# Readiness check  \ncurl http://localhost:8080/actuator/health/readiness\n\n# Metrics endpoint\ncurl http://localhost:8080/actuator/metrics\n```\n\n## Security Best Practices\n\n### Non-root User\n```bash\n# Verify non-root execution\ndocker exec container-name id\n# Output: uid=1001(appuser) gid=1001(appuser)\n```\n\n### Vulnerability Scanning\n```bash\n# Scan for vulnerabilities\ndocker scout cves public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n## Troubleshooting\n\n### Memory Issues\n```bash\n# Increase heap size\ndocker run -e JAVA_OPTS=\"-Xmx4g -Xms2g\" public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n### Debug Mode\n```bash\n# Enable debug logging\ndocker run -e LOG_LEVEL=DEBUG public.ecr.aws/registry/" + repositoryName + ":latest\n```\n\n### JVM Analysis\n```bash\n# Enable JVM debugging\ndocker run -e JAVA_OPTS=\"-XX:+PrintGCDetails -XX:+PrintGCTimeStamps\" \\\n  public.ecr.aws/registry/" + repositoryName + ":latest\n```",
 				"architectures":     []string{"x86-64", "ARM 64"},
 				"operating_systems": []string{"Linux"},
 			},
@@ -462,7 +227,7 @@ func TestECRPublicGalleryRegionalConstraints(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-regional-%s", uniqueID)
-	
+
 	// Validate repository name format for security
 	validateRepositoryNameFormat(t, repositoryName)
 
@@ -474,8 +239,8 @@ func TestECRPublicGalleryRegionalConstraints(t *testing.T) {
 		Vars: map[string]interface{}{
 			"repository_name": repositoryName,
 			"catalog_data": map[string]interface{}{
-				"description":       "Test repository for regional constraints validation",
-				"about_text":       "# Regional Constraints Test\nThis repository tests ECR Public's us-east-1 regional constraint.",
+				"description": "Test repository for regional constraints validation",
+				"about_text":  "# Regional Constraints Test\nThis repository tests ECR Public's us-east-1 regional constraint.",
 			},
 		},
 		EnvVars: map[string]string{
@@ -566,7 +331,7 @@ func validateRepositoryNameFormat(t *testing.T, repositoryName string) {
 	if !validPattern.MatchString(repositoryName) {
 		t.Fatalf("Invalid repository name format: %s. Repository names must contain only lowercase letters, numbers, and hyphens.", repositoryName)
 	}
-	
+
 	// Additional ECR Public repository name validations
 	if len(repositoryName) == 0 {
 		t.Fatal("Repository name cannot be empty")
