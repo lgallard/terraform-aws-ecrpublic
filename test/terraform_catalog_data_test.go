@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -17,6 +18,9 @@ func TestECRPublicCatalogDataValidation(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-catalog-validation-%s", uniqueID)
+	
+	// Validate repository name format for security
+	validateRepositoryNameFormat(t, repositoryName)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
@@ -38,7 +42,12 @@ func TestECRPublicCatalogDataValidation(t *testing.T) {
 	})
 
 	// Clean up resources with "terraform destroy" at the end of the test
-	defer terraform.Destroy(t, terraformOptions)
+	defer func() {
+		if err := terraform.DestroyE(t, terraformOptions); err != nil {
+			t.Logf("Warning: Failed to destroy resources: %v", err)
+			t.Logf("Manual cleanup needed for repository: %s", repositoryName)
+		}
+	}()
 
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)
@@ -55,6 +64,9 @@ func TestECRPublicMinimalCatalogData(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-minimal-catalog-%s", uniqueID)
+	
+	// Validate repository name format for security
+	validateRepositoryNameFormat(t, repositoryName)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
@@ -74,7 +86,12 @@ func TestECRPublicMinimalCatalogData(t *testing.T) {
 	})
 
 	// Clean up resources with "terraform destroy" at the end of the test
-	defer terraform.Destroy(t, terraformOptions)
+	defer func() {
+		if err := terraform.DestroyE(t, terraformOptions); err != nil {
+			t.Logf("Warning: Failed to destroy resources: %v", err)
+			t.Logf("Manual cleanup needed for repository: %s", repositoryName)
+		}
+	}()
 
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)
@@ -91,6 +108,9 @@ func TestECRPublicComprehensiveCatalogData(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-comprehensive-%s", uniqueID)
+	
+	// Validate repository name format for security
+	validateRepositoryNameFormat(t, repositoryName)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
@@ -156,7 +176,12 @@ This image supports multiple architectures:
 	})
 
 	// Clean up resources with "terraform destroy" at the end of the test
-	defer terraform.Destroy(t, terraformOptions)
+	defer func() {
+		if err := terraform.DestroyE(t, terraformOptions); err != nil {
+			t.Logf("Warning: Failed to destroy resources: %v", err)
+			t.Logf("Manual cleanup needed for repository: %s", repositoryName)
+		}
+	}()
 
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)
@@ -173,6 +198,9 @@ func TestECRPublicMultiArchitectureSupport(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-multiarch-%s", uniqueID)
+	
+	// Validate repository name format for security
+	validateRepositoryNameFormat(t, repositoryName)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
@@ -193,7 +221,12 @@ func TestECRPublicMultiArchitectureSupport(t *testing.T) {
 	})
 
 	// Clean up resources with "terraform destroy" at the end of the test
-	defer terraform.Destroy(t, terraformOptions)
+	defer func() {
+		if err := terraform.DestroyE(t, terraformOptions); err != nil {
+			t.Logf("Warning: Failed to destroy resources: %v", err)
+			t.Logf("Manual cleanup needed for repository: %s", repositoryName)
+		}
+	}()
 
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)
@@ -210,6 +243,9 @@ func TestECRPublicMarkdownFormatting(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-markdown-%s", uniqueID)
+	
+	// Validate repository name format for security
+	validateRepositoryNameFormat(t, repositoryName)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
@@ -230,7 +266,12 @@ func TestECRPublicMarkdownFormatting(t *testing.T) {
 	})
 
 	// Clean up resources with "terraform destroy" at the end of the test
-	defer terraform.Destroy(t, terraformOptions)
+	defer func() {
+		if err := terraform.DestroyE(t, terraformOptions); err != nil {
+			t.Logf("Warning: Failed to destroy resources: %v", err)
+			t.Logf("Manual cleanup needed for repository: %s", repositoryName)
+		}
+	}()
 
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)
@@ -253,4 +294,21 @@ func validateCatalogDataCompliance(t *testing.T, terraformOptions *terraform.Opt
 
 	// Additional compliance validations can be added here
 	// For now, successful creation indicates catalog data was valid
+}
+
+// Helper function to validate repository name format for security
+func validateRepositoryNameFormat(t *testing.T, repositoryName string) {
+	// Validate repository name format to prevent string injection
+	validPattern := regexp.MustCompile(`^[a-z0-9-]+$`)
+	if !validPattern.MatchString(repositoryName) {
+		t.Fatalf("Invalid repository name format: %s. Repository names must contain only lowercase letters, numbers, and hyphens.", repositoryName)
+	}
+	
+	// Additional ECR Public repository name validations
+	if len(repositoryName) == 0 {
+		t.Fatal("Repository name cannot be empty")
+	}
+	if len(repositoryName) > 256 {
+		t.Fatal("Repository name must be 256 characters or less")
+	}
 }

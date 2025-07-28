@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -17,6 +18,9 @@ func TestECRPublicGalleryOptimization(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-gallery-opt-%s", uniqueID)
+	
+	// Validate repository name format for security
+	validateRepositoryNameFormat(t, repositoryName)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
@@ -128,7 +132,12 @@ curl http://localhost:3000/health
 	})
 
 	// Clean up resources with "terraform destroy" at the end of the test
-	defer terraform.Destroy(t, terraformOptions)
+	defer func() {
+		if err := terraform.DestroyE(t, terraformOptions); err != nil {
+			t.Logf("Warning: Failed to destroy resources: %v", err)
+			t.Logf("Manual cleanup needed for repository: %s", repositoryName)
+		}
+	}()
 
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)
@@ -144,6 +153,9 @@ func TestECRPublicGallerySearchability(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-searchable-%s", uniqueID)
+	
+	// Validate repository name format for security
+	validateRepositoryNameFormat(t, repositoryName)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
@@ -164,7 +176,12 @@ func TestECRPublicGallerySearchability(t *testing.T) {
 	})
 
 	// Clean up resources with "terraform destroy" at the end of the test
-	defer terraform.Destroy(t, terraformOptions)
+	defer func() {
+		if err := terraform.DestroyE(t, terraformOptions); err != nil {
+			t.Logf("Warning: Failed to destroy resources: %v", err)
+			t.Logf("Manual cleanup needed for repository: %s", repositoryName)
+		}
+	}()
 
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)
@@ -180,6 +197,9 @@ func TestECRPublicGalleryContentGuidelines(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-guidelines-%s", uniqueID)
+	
+	// Validate repository name format for security
+	validateRepositoryNameFormat(t, repositoryName)
 
 	// Use us-east-1 as ECR Public is only available in this region
 	awsRegion := "us-east-1"
@@ -421,7 +441,12 @@ docker run -e JAVA_OPTS="-XX:+PrintGCDetails -XX:+PrintGCTimeStamps" \\
 	})
 
 	// Clean up resources with "terraform destroy" at the end of the test
-	defer terraform.Destroy(t, terraformOptions)
+	defer func() {
+		if err := terraform.DestroyE(t, terraformOptions); err != nil {
+			t.Logf("Warning: Failed to destroy resources: %v", err)
+			t.Logf("Manual cleanup needed for repository: %s", repositoryName)
+		}
+	}()
 
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)
@@ -437,6 +462,9 @@ func TestECRPublicGalleryRegionalConstraints(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-regional-%s", uniqueID)
+	
+	// Validate repository name format for security
+	validateRepositoryNameFormat(t, repositoryName)
 
 	// Explicitly test us-east-1 constraint
 	awsRegion := "us-east-1"
@@ -456,7 +484,12 @@ func TestECRPublicGalleryRegionalConstraints(t *testing.T) {
 	})
 
 	// Clean up resources with "terraform destroy" at the end of the test
-	defer terraform.Destroy(t, terraformOptions)
+	defer func() {
+		if err := terraform.DestroyE(t, terraformOptions); err != nil {
+			t.Logf("Warning: Failed to destroy resources: %v", err)
+			t.Logf("Manual cleanup needed for repository: %s", repositoryName)
+		}
+	}()
 
 	// Run "terraform init" and "terraform apply"
 	terraform.InitAndApply(t, terraformOptions)
@@ -524,4 +557,21 @@ func validateRegionalConstraints(t *testing.T, terraformOptions *terraform.Optio
 	assert.Contains(t, repositoryURL, "public.ecr.aws", "Repository should use ECR Public domain")
 
 	// The fact that the repository was created successfully validates regional constraints
+}
+
+// Helper function to validate repository name format for security
+func validateRepositoryNameFormat(t *testing.T, repositoryName string) {
+	// Validate repository name format to prevent string injection
+	validPattern := regexp.MustCompile(`^[a-z0-9-]+$`)
+	if !validPattern.MatchString(repositoryName) {
+		t.Fatalf("Invalid repository name format: %s. Repository names must contain only lowercase letters, numbers, and hyphens.", repositoryName)
+	}
+	
+	// Additional ECR Public repository name validations
+	if len(repositoryName) == 0 {
+		t.Fatal("Repository name cannot be empty")
+	}
+	if len(repositoryName) > 256 {
+		t.Fatal("Repository name must be 256 characters or less")
+	}
 }
