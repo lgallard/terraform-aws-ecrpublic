@@ -59,3 +59,10 @@ variable "timeouts_delete" {
   type        = string
   default     = null
 }
+
+# Tags
+variable "tags" {
+  description = "A map of tags to assign to the resource."
+  type        = map(string)
+  default     = {}
+}

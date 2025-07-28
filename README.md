@@ -19,10 +19,10 @@ module "public-ecr" {
 
   catalog_data = {
     about_text        = "# Public repo\nPut your description here using Markdown format"
-    architectures     = ["Linux"]
+    architectures     = ["ARM", "x86-64"]
     description       = "Description"
     logo_image_blob   = filebase64("image.png")
-    operating_systems = ["ARM"]
+    operating_systems = ["Linux"]
     usage_text        = "# Usage\n How to use you image goes here. Use Markdown format"
   }
 }
@@ -39,10 +39,10 @@ module "public-ecr" {
   repository_name = "lgallard-public-repo"
 
   catalog_data_about_text        = "# Public repo\nPut your description here using Markdown format"
-  catalog_data_architectures     = ["Linux"]
+  catalog_data_architectures     = ["ARM", "x86-64"]
   catalog_data_description       = "Description"
   catalog_data_logo_image_blob   = filebase64("image.png")
-  catalog_data_operating_systems = ["ARM"]
+  catalog_data_operating_systems = ["Linux"]
   catalog_data_usage_text        = "# Usage\n How to use you image goes here. Use Markdown format"
 
 }
@@ -51,77 +51,207 @@ module "public-ecr" {
 
 ## Testing
 
-This module includes comprehensive automated testing using [Terratest](https://github.com/gruntwork-io/terratest) and GitHub Actions CI/CD.
+This module includes comprehensive automated testing using [Terratest](https://github.com/gruntwork-io/terratest) with specialized ECR Public testing patterns following CLAUDE.md guidelines.
 
-### Running Tests Locally
+### Prerequisites
 
-Prerequisites:
-- [Terraform](https://www.terraform.io/downloads.html) >= 1.0
-- [Go](https://golang.org/dl/) >= 1.21
+- **Terraform** >= 1.0
+- **Go** >= 1.21  
+- **AWS credentials** with ECR Public permissions
+- **AWS Region**: Tests must run in `us-east-1` (ECR Public constraint)
 
-Available commands:
+### Quick Start
 
 ```bash
-# Check terraform formatting
-make fmt-check
-
-# Validate terraform configuration
-make validate
-
-# Run static tests (format check, validation, syntax tests)
+# Run static tests only (no AWS resources)
 make test
 
-# Run integration tests (creates real AWS resources - requires AWS credentials)
+# Run basic integration tests (creates AWS resources)
 make test-integration
 
-# Run all static checks (recommended for development)
-make check
+# Run all comprehensive tests
+make test-all
+```
 
-# Run all checks including integration tests
-make check-all
+### Available Test Suites
 
-# Format terraform files
-make fmt
+#### Static Tests (No AWS Resources)
+```bash
+make test-static          # Format and validation checks
+make fmt-check           # Terraform formatting validation
+make validate            # Configuration validation
+```
 
-# Clean up test artifacts
-make clean
+#### Integration Tests (Creates AWS Resources)
+```bash
+make test-integration    # Basic ECR Public repository tests
+make test-catalog        # Catalog data validation tests
+make test-gallery        # Public gallery compliance tests
+make test-timeouts       # Timeout configuration tests
+make test-validation     # Variable validation tests
+```
+
+#### Comprehensive Testing
+```bash
+make check              # All static checks
+make check-all          # All checks including integration tests
+make test-all           # Complete integration test suite
 ```
 
 ### Test Coverage
 
-The test suite includes:
+#### 1. Static Tests (`terraform_basic_test.go`)
+- **Format validation**: Terraform file formatting
+- **Configuration validation**: Syntax and structure validation
+- **Example validation**: Both `using_objects` and `using_variables` examples
+- **Fast execution**: Completes in seconds, no AWS resources
 
-**Static Tests (No AWS resources created):**
-- **Terraform Format Check**: Ensures all Terraform files are properly formatted
-- **Terraform Validation**: Validates the main module configuration
-- **Examples Validation**: Tests both `using_objects` and `using_variables` examples
-- **Examples Format Check**: Ensures example code is properly formatted
+#### 2. Integration Tests (`terraform_integration_test.go`)
+- **Basic repository creation**: Core ECR Public functionality
+- **Variable-based catalog data**: Individual variable approach testing
+- **Object-based catalog data**: Object configuration approach testing
+- **Timeout configuration**: Custom timeout settings validation
+- **Complete configuration**: Comprehensive feature testing
 
-**Integration Tests (Creates real AWS resources):**
-- **ECR Public Repository Creation**: Tests actual repository creation and configuration
-- **Catalog Data Integration**: Verifies repository metadata and catalog information
-- **Example Deployment**: Tests real-world usage scenarios
-- **Resource Cleanup**: Ensures proper cleanup after testing
+#### 3. Catalog Data Tests (`terraform_catalog_data_test.go`)
+- **Content validation**: ECR Public Gallery guidelines compliance
+- **Minimal configuration**: Tests minimal valid catalog data
+- **Comprehensive configuration**: Tests all catalog data fields
+- **Multi-architecture support**: Architecture and OS tagging validation
+- **Markdown formatting**: Rich markdown content validation
 
-⚠️ **Note**: Integration tests create real AWS ECR Public repositories and may incur costs. Ensure you have:
-- Valid AWS credentials configured
-- Appropriate permissions for ECR Public operations
-- Access to the `us-east-1` region (required for ECR Public)
+#### 4. Public Gallery Tests (`terraform_public_gallery_test.go`)
+- **Gallery optimization**: Discoverability and searchability features
+- **Content guidelines**: ECR Public Gallery content standards
+- **Regional constraints**: us-east-1 region requirement validation
+- **Public accessibility**: Global public access validation
+
+### ECR Public Specific Testing
+
+This module follows ECR Public-specific testing patterns:
+
+#### Regional Constraints
+All tests enforce ECR Public's `us-east-1` regional constraint:
+```go
+awsRegion := "us-east-1"
+EnvVars: map[string]string{
+    "AWS_DEFAULT_REGION": awsRegion,
+}
+```
+
+#### Catalog Data Validation
+Tests validate ECR Public Gallery content guidelines:
+- **Description length**: Maximum 256 characters
+- **Architecture validation**: `x86-64`, `ARM`, `ARM 64`
+- **Operating system validation**: `Linux`, `Windows`
+- **Markdown formatting**: Proper markdown in about and usage text
+- **Public content standards**: Appropriate content for public repositories
+
+#### Repository Naming
+Tests use unique repository names to avoid conflicts:
+```go
+uniqueID := strings.ToLower(random.UniqueId())
+repositoryName := fmt.Sprintf("terratest-prefix-%s", uniqueID)
+```
+
+### Test Validation Patterns
+
+The test suite includes specialized validation helpers:
+
+#### Repository Validation
+- `validateECRPublicRepository()`: Basic repository creation validation
+- `validateBasicOutputs()`: Module outputs validation
+- `validateCatalogDataOutputs()`: Catalog data specific validation
+- `validateAllOutputs()`: Comprehensive output validation
+
+#### Gallery Validation
+- `validatePublicGalleryOptimization()`: Gallery discoverability checks
+- `validatePublicGallerySearchability()`: Search optimization validation
+- `validatePublicGalleryContentGuidelines()`: Content compliance validation
+- `validateRegionalConstraints()`: Regional constraint validation
+
+### Example Test Execution
+
+#### Basic Repository Test
+```bash
+cd test
+go test -v -run TestTerraformECRPublicBasic -timeout 30m
+```
+
+#### Catalog Data Validation
+```bash
+cd test  
+go test -v -run TestECRPublicCatalogDataValidation -timeout 45m
+```
+
+#### Complete Test Suite
+```bash
+cd test
+go test -v -timeout 30m -parallel 2
+```
+
+### AWS Resources and Costs
+
+⚠️ **Important**: Integration tests create real AWS resources:
+
+- **ECR Public Repositories**: Created and configured with catalog data
+- **Region Requirement**: All resources created in `us-east-1` only
+- **Cost**: ECR Public repositories are free to create and maintain
+- **Cleanup**: Automatic cleanup with `terraform destroy` after each test
+
+### Required AWS Permissions
+
+```json
+{
+    "Version": "2012-10-17", 
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ecr-public:CreateRepository",
+                "ecr-public:DeleteRepository", 
+                "ecr-public:DescribeRepositories",
+                "ecr-public:GetRepositoryCatalogData",
+                "ecr-public:PutRepositoryCatalogData"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
 
 ### Continuous Integration
 
-This repository includes a GitHub Actions workflow that automatically:
+GitHub Actions workflow provides automated testing:
 
-- **Static Tests**: Run on all pull requests and pushes
-  - Checks Terraform formatting with `terraform fmt -check`
-  - Validates all Terraform configurations
-  - Executes static Terratest validation
-- **Integration Tests**: Run on main branch pushes or manual dispatch
-  - Creates and tests real ECR Public repositories
-  - Requires AWS credentials to be configured as GitHub secrets
-  - Automatically cleans up resources after testing
+- **Static Tests**: Run on all pull requests (no AWS resources)
+- **Integration Tests**: Run on main branch or manual dispatch
+- **Parallel Execution**: Optimized for faster feedback
+- **Comprehensive Coverage**: All test suites included
 
-All static tests must pass before code can be merged. Integration tests provide additional confidence for production deployments.
+### Troubleshooting
+
+#### Common Issues
+
+**Region Errors**
+```
+Error: ECR Public repositories can only be created in us-east-1
+Solution: Set AWS_DEFAULT_REGION=us-east-1
+```
+
+**Permission Errors**  
+```
+Error: Access denied for ECR Public operations
+Solution: Verify AWS credentials have ECR Public permissions
+```
+
+**Repository Conflicts**
+```
+Error: Repository already exists
+Solution: Tests use unique IDs, manual cleanup may be needed
+```
+
+For detailed testing instructions and troubleshooting, see [test/README.md](test/README.md).
 
 ## Requirements
 
