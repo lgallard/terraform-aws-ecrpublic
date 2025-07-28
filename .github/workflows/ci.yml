@@ -28,7 +28,7 @@ jobs:
   security:
     name: Security
     uses: ./.github/workflows/security.yml
-    if: github.event.inputs.run_security_scans != 'false'
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.run_security_scans != 'false'
 
   # Quick static tests for pull requests
   quick-tests:
@@ -62,7 +62,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.event.inputs.run_integration_tests == 'true'
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_integration_tests == 'true')
     needs: [validate]
     
     steps:
@@ -123,7 +123,7 @@ jobs:
         echo "- **Integration Tests**: Real AWS ECR Public repository creation and testing" >> $GITHUB_STEP_SUMMARY
         
         # Check for failures
-        if [[ "${{ needs.validate.result }}" == "failure" || "${{ needs.security.result }}" == "failure" || "${{ needs.quick-tests.result }}" == "failure" || "${{ needs.integration-tests.result }}" == "failure" ]]; then
+        if [[ "${{ needs.validate.result }}" != "success" || "${{ needs.security.result }}" != "success" || "${{ needs.quick-tests.result }}" != "success" || "${{ needs.integration-tests.result }}" != "success" ]]; then
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "❌ CI pipeline has failures. Please review the failed workflows." >> $GITHUB_STEP_SUMMARY
           exit 1

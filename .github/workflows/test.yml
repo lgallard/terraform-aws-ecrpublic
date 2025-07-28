@@ -186,9 +186,6 @@ jobs:
         cd test
         go mod tidy
         
-        # Set unique suffix for this test run to avoid conflicts
-        export TEST_UNIQUE_SUFFIX="${{ github.run_id }}-${{ matrix.test }}"
-        
         # Run the specific integration test
         go test -v -timeout 30m -run ${{ matrix.test }}
       env:
@@ -411,12 +408,12 @@ jobs:
         ADVANCED_RESULT="${{ needs.terratest-integration-advanced.result }}"
         COMPATIBILITY_RESULT="${{ needs.ecr-public-compatibility.result }}"
         
-        if [[ "$STATIC_RESULT" == "failure" || "$EXAMPLES_RESULT" == "failure" || "$INTEGRATION_RESULT" == "failure" || "$ADVANCED_RESULT" == "failure" || "$COMPATIBILITY_RESULT" == "failure" ]]; then
+        if [[ "$STATIC_RESULT" != "success" || "$EXAMPLES_RESULT" != "success" || "$INTEGRATION_RESULT" != "success" || "$ADVANCED_RESULT" != "success" || "$COMPATIBILITY_RESULT" != "success" ]]; then
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "❌ Some tests failed. Please check the logs for details." >> $GITHUB_STEP_SUMMARY
           
           # Provide specific guidance for ECR Public failures
-          if [[ "$INTEGRATION_RESULT" == "failure" ]]; then
+          if [[ "$INTEGRATION_RESULT" != "success" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Integration test failures** may be due to:" >> $GITHUB_STEP_SUMMARY
             echo "- AWS credentials not configured" >> $GITHUB_STEP_SUMMARY

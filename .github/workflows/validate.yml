@@ -86,8 +86,15 @@ jobs:
 
     - name: Create test versions.tf with matrix provider version
       run: |
-        # Backup and remove existing versions.tf to avoid conflict
-        mv versions.tf versions.tf.bak
+        # Create unique temporary directory for this matrix job to avoid race conditions
+        TEMP_DIR="temp-${{ matrix.terraform_version }}-${{ matrix.aws_provider_version }}-${{ github.run_id }}"
+        mkdir -p "$TEMP_DIR"
+        
+        # Copy module files to temp directory
+        cp -r *.tf examples/ "$TEMP_DIR/"
+        cd "$TEMP_DIR"
+        
+        # Create versions.tf with matrix provider version
         cat > versions.tf << EOF
         terraform {
           required_version = ">= 1.3.0"
@@ -101,18 +108,29 @@ jobs:
         EOF
 
     - name: Terraform Format Check
-      run: terraform fmt -check=true -recursive
+      run: |
+        TEMP_DIR="temp-${{ matrix.terraform_version }}-${{ matrix.aws_provider_version }}-${{ github.run_id }}"
+        cd "$TEMP_DIR"
+        terraform fmt -check=true -recursive
 
     - name: Terraform Init
-      run: terraform init -backend=false
+      run: |
+        TEMP_DIR="temp-${{ matrix.terraform_version }}-${{ matrix.aws_provider_version }}-${{ github.run_id }}"
+        cd "$TEMP_DIR"
+        terraform init -backend=false
 
     - name: Terraform Validate
-      run: terraform validate
+      run: |
+        TEMP_DIR="temp-${{ matrix.terraform_version }}-${{ matrix.aws_provider_version }}-${{ github.run_id }}"
+        cd "$TEMP_DIR"
+        terraform validate
 
     # ECR Public specific validation - check us-east-1 region requirement
     - name: ECR Public Region Validation
       run: |
         echo "Validating ECR Public configuration..."
+        TEMP_DIR="temp-${{ matrix.terraform_version }}-${{ matrix.aws_provider_version }}-${{ github.run_id }}"
+        cd "$TEMP_DIR"
         # Check that examples properly configure us-east-1 region
         if grep -r "aws_region.*=" examples/ | grep -v "us-east-1"; then
           echo "Error: ECR Public repositories must be created in us-east-1 region"
@@ -122,8 +140,9 @@ jobs:
 
     - name: Cleanup
       run: |
-        # Restore original versions.tf
-        mv versions.tf.bak versions.tf
+        # Clean up temporary directory
+        TEMP_DIR="temp-${{ matrix.terraform_version }}-${{ matrix.aws_provider_version }}-${{ github.run_id }}"
+        rm -rf "$TEMP_DIR"
 
   validate-examples:
     name: Validate Examples
@@ -175,14 +194,30 @@ jobs:
           echo "Warning: No catalog_data configuration found in example"
         fi
         
-        # Check for repository naming conventions
-        if grep -q "repository_name.*=" *.tf; then
-          REPO_NAME=$(grep "repository_name.*=" *.tf | head -1 | sed 's/.*=\s*"\([^"]*\)".*/\1/')
-          if [[ "$REPO_NAME" =~ [A-Z] ]]; then
-            echo "Warning: Repository name contains uppercase letters: $REPO_NAME"
-            echo "ECR Public repository names should be lowercase"
-          fi
-        fi
+        # Check for repository naming conventions with robust parsing
+        python3 << 'EOF'
+        import re
+        import os
+        from pathlib import Path
+        
+        # Find repository names in current directory Terraform files
+        repo_names = []
+        for tf_file in Path('.').glob('*.tf'):
+            try:
+                content = tf_file.read_text()
+                # Use proper regex to extract repository names
+                names = re.findall(r'repository_name\s*=\s*"([^"]+)"', content)
+                repo_names.extend(names)
+            except Exception as e:
+                print(f"Error reading {tf_file}: {e}")
+        
+        # Check naming conventions for the first found repository name
+        if repo_names:
+            repo_name = repo_names[0]  # Take first one for validation
+            if re.search(r'[A-Z]', repo_name):
+                print(f"Warning: Repository name contains uppercase letters: {repo_name}")
+                print("ECR Public repository names should be lowercase")
+        EOF
         
         echo "ECR Public Gallery content validation completed"
 
@@ -282,7 +317,7 @@ jobs:
         echo "| Examples Validate | ${{ needs.validate-examples.result }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Catalog Data Validate | ${{ needs.validate-catalog-data.result }} |" >> $GITHUB_STEP_SUMMARY
         
-        if [[ "${{ needs.terraform-validate.result }}" == "failure" || "${{ needs.validate-examples.result }}" == "failure" || "${{ needs.validate-catalog-data.result }}" == "failure" ]]; then
+        if [[ "${{ needs.terraform-validate.result }}" != "success" || "${{ needs.validate-examples.result }}" != "success" || "${{ needs.validate-catalog-data.result }}" != "success" ]]; then
           echo "❌ Some validation checks failed. Please check the logs for details." >> $GITHUB_STEP_SUMMARY
           exit 1
         else
