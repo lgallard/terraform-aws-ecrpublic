@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.6.0...0.7.0) (2025-07-30)
+
+
+### Features
+
+* replicate security-hardened Claude Code Review workflow with PR focus ([#27](https://github.com/lgallard/terraform-aws-ecrpublic/issues/27)) ([c53d77e](https://github.com/lgallard/terraform-aws-ecrpublic/commit/c53d77e0d57953258df50b7ec5645f5996a6cdb6))
+
 ## [0.6.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.5.0...0.6.0) (2025-07-28)
 
 
