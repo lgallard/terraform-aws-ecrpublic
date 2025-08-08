@@ -32,8 +32,8 @@ variable "catalog_data_about_text" {
   }
   
   validation {
-    condition     = var.catalog_data_about_text == null || length(var.catalog_data_about_text) <= 25600
-    error_message = "About text must be 25600 characters or less for ECR Public Gallery."
+    condition     = var.catalog_data_about_text == null || length(var.catalog_data_about_text) <= 16384
+    error_message = "About text must be 16384 characters or less for ECR Public Gallery."
   }
 }
 
@@ -57,8 +57,8 @@ variable "catalog_data_description" {
   default     = null
   
   validation {
-    condition     = var.catalog_data_description == null || length(var.catalog_data_description) <= 1024
-    error_message = "Description must be 1024 characters or less for ECR Public Gallery visibility."
+    condition     = var.catalog_data_description == null || length(var.catalog_data_description) <= 256
+    error_message = "Description must be 256 characters or less for ECR Public Gallery visibility."
   }
 }
 
@@ -66,15 +66,20 @@ variable "catalog_data_logo_image_blob" {
   description = "The base64-encoded repository logo payload. (Only visible for verified accounts) Note that drift detection is disabled for this attribute."
   type        = string
   default     = null
+  
+  validation {
+    condition = var.catalog_data_logo_image_blob == null || can(base64decode(var.catalog_data_logo_image_blob))
+    error_message = "Logo image blob must be valid base64-encoded data."
+  }
 }
 
 variable "catalog_data_operating_systems" {
   description = "The operating systems that the images in the repository are compatible with. On the Amazon ECR Public Gallery, the following supported operating systems will appear as badges on the repository and are used as search filters: `Linux`, `Windows`."
   type        = list(string)
-  default     = null
+  default     = []
   
   validation {
-    condition = var.catalog_data_operating_systems == null || alltrue([
+    condition = alltrue([
       for os in var.catalog_data_operating_systems : 
       contains(["Linux", "Windows"], os)
     ])
