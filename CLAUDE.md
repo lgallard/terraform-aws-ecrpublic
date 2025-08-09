@@ -485,4 +485,84 @@ terraform {
 11. **Gallery Content Optimization** - Best practices for searchable, discoverable public repositories
 12. **Example-Driven Documentation** - Multiple configuration examples for different use cases
 
+## MCP Server Configuration
+
+### Available MCP Servers
+This project is configured to use the following Model Context Protocol (MCP) servers for enhanced documentation access:
+
+#### Terraform MCP Server
+**Purpose**: Access up-to-date Terraform and AWS provider documentation
+**Package**: `@modelcontextprotocol/server-terraform`
+
+**Local Configuration** (`.mcp.json`):
+```json
+{
+  "mcpServers": {
+    "terraform": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-terraform@latest"]
+    }
+  }
+}
+```
+
+**Usage Examples**:
+- `Look up aws_ecrpublic_repository resource documentation`
+- `Find the latest ECR Public catalog data examples`
+- `Search for AWS ECR Public Terraform modules`
+- `Get documentation for ECR Public Gallery integration`
+
+#### Context7 MCP Server
+**Purpose**: Access general library and framework documentation
+**Package**: `@upstash/context7-mcp`
+
+**Local Configuration** (`.mcp.json`):
+```json
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
+  }
+}
+```
+
+**Usage Examples**:
+- `Look up Go testing patterns for Terratest`
+- `Find AWS CLI ECR Public commands documentation`
+- `Get current container registry best practices`
+- `Search for GitHub Actions workflow patterns`
+
+### GitHub Actions Integration
+The MCP servers are automatically available in GitHub Actions through the claude.yml workflow configuration. Claude can access the same documentation in PRs and issues as available locally.
+
+### Usage Tips
+1. **Be Specific**: When requesting documentation, specify the exact resource or concept
+2. **Version Awareness**: Both servers provide current, version-specific documentation
+3. **Combine Sources**: Use Terraform MCP for ECR Public-specific docs, Context7 for general development patterns
+4. **Local vs CI**: Same MCP servers work in both local development and GitHub Actions
+
+### Example Workflows
+
+**ECR Public Resource Development**:
+```
+@claude I need to add support for ECR Public registry scanning configuration. Can you look up the latest aws_ecrpublic_repository documentation and show me how to implement enhanced security features?
+```
+
+**Testing Pattern Research**:
+```
+@claude Look up current Terratest patterns for testing ECR Public repositories and help me add comprehensive tests for the catalog data functionality.
+```
+
+**Gallery Optimization**:
+```
+@claude Research the latest ECR Public Gallery best practices and help me implement better discoverability and searchability for public repositories.
+```
+
+**Catalog Data Enhancement**:
+```
+@claude Look up the latest ECR Public catalog data patterns and help me improve the markdown content and metadata organization for better Gallery presentation.
+```
+
 *Note: This module focuses exclusively on AWS ECR Public Gallery best practices and patterns for public container distribution and open-source project hosting.*
