@@ -5,12 +5,12 @@ Terraform module to create a Public [AWS ECR](https://aws.amazon.com/ecr) to sha
 ## Usage
 You can use this module to create a public ECR registry using objects definition, or using the variables approach:
 
-Check the [examples](examples/) for the **using objects** and the **using variables* snippets.
+Check the [examples](examples/) for the **using objects** and the **using variables** snippets.
 
 ### Using Objects example
-This example creates an public ECR registry:
+This example creates a public ECR registry:
 
-```
+```hcl
 module "public-ecr" {
 
   source = "lgallard/ecrpublic/aws"
@@ -29,9 +29,9 @@ module "public-ecr" {
 ```
 
 ### Using variables
-This example creates an public ECR registry using variables
+This example creates a public ECR registry using variables
 
-```
+```hcl
 module "public-ecr" {
 
   source = "lgallard/ecrpublic/aws"

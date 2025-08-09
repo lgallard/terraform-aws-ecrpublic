@@ -73,14 +73,14 @@ repos:
           fi
           
           # Check for architecture validation
-          if grep -q "ARM.*x86-64" variables.tf; then
+          if grep -q "ARM\|x86-64\|ARM 64" variables.tf; then
             echo "✓ ECR Public architecture validation found"  
           else
             echo "⚠ ECR Public architecture validation missing"
           fi
           
           # Check for operating system validation
-          if grep -q "Linux.*Windows" variables.tf; then
+          if grep -q "Linux\|Windows" variables.tf; then
             echo "✓ ECR Public OS validation found"
           else
             echo "⚠ ECR Public OS validation missing"  
@@ -95,7 +95,7 @@ repos:
         - -c
         - |
           # Check if any region is specified other than us-east-1 for ECR Public
-          if grep -E "(region|aws_region)" "$1" | grep -v "us-east-1" | grep -q .; then
+          if grep -E "(region|aws_region)" -- "$1" 2>/dev/null | grep -v "us-east-1" | grep -q .; then
             echo "❌ ECR Public repositories must be created in us-east-1 region"
             exit 1
           fi

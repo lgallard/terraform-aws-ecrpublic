@@ -13,17 +13,8 @@ exclude_patterns:
   - "test/**"
   - "**/node_modules/**"
 
-# Custom checks for ECR Public
-custom_checks:
-  - code: ECR001
-    description: "ECR Public repositories must be created in us-east-1 region"
-    impact: "ECR Public is only available in us-east-1 region"
-    resolution: "Ensure all ECR Public resources are created in us-east-1"
-    
-  - code: ECR002  
-    description: "ECR Public catalog data should follow content guidelines"
-    impact: "Improper content may violate ECR Public Gallery guidelines"
-    resolution: "Validate catalog data content follows ECR Public standards"
+# Note: Custom checks require implementing Go code and compiling into TFSec
+# ECR Public specific validation is handled by pre-commit hooks instead
 
 # Exclude checks not relevant to ECR Public
 exclude_checks:

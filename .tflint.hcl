@@ -16,14 +16,8 @@ plugin "terraform" {
   source  = "github.com/terraform-linters/tflint-ruleset-terraform"
 }
 
-# ECR Public specific rules
-rule "aws_ecrpublic_repository_invalid_name" {
-  enabled = true
-}
-
-rule "aws_ecrpublic_repository_catalog_data_validation" {
-  enabled = true
-}
+# ECR Public specific rules - using actual TFLint AWS rules
+# Note: Custom ECR Public rules would need to be implemented as custom TFLint plugins
 
 # General AWS and Terraform rules
 rule "terraform_deprecated_interpolation" {
