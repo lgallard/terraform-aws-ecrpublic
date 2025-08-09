@@ -1,0 +1,69 @@
+---
+# Checkov configuration for ECR Public module
+framework:
+  - terraform
+
+# Directory scanning
+directory:
+  - "."
+
+# Files to exclude
+exclude-paths:
+  - ".terraform/**"
+  - ".git/**"
+  - "test/**"
+  - "examples/**/provider.tf"
+  - "**/node_modules/**"
+
+# Skip specific checks not relevant to ECR Public
+skip-check:
+  # S3 related checks (not relevant for ECR Public)
+  - CKV_AWS_18  # S3 Bucket has an Object Lock configuration
+  - CKV_AWS_21  # S3 Bucket has versioning enabled
+  - CKV_AWS_144  # S3 bucket has cross-region replication
+  - CKV_AWS_145  # S3 buckets should specify the lifecycle configuration
+  
+  # ECR private checks (different from ECR Public)
+  - CKV_AWS_33  # ECR repositories are encrypted
+  - CKV_AWS_163  # ECR repository has image vulnerability scanning enabled
+  
+  # IAM checks that may not apply to this simple module
+  - CKV_AWS_60  # IAM policy attached to users
+  - CKV_AWS_61  # IAM policy attached to groups
+  - CKV_AWS_62  # IAM policy attached to roles
+  
+  # VPC/Network checks (not relevant for ECR Public)
+  - CKV_AWS_23  # Security group rule without description
+  - CKV_AWS_24  # Security group rule allows ingress from 0.0.0.0/0 to port 22
+  
+# Soft fail mode - warnings instead of failures for some checks  
+soft-fail-on:
+  - CKV_TF_1   # Terraform module pinned source version
+  
+# Custom policies directory (if we had custom policies)
+# external-checks-dir: "./custom-policies"
+
+# Baseline configuration  
+baseline: null
+
+# Enable quiet mode for cleaner output
+quiet: false
+
+# Enable compact output
+compact: false
+
+# Framework version (leave empty for latest)
+framework-version: null
+
+# Only run specific checks (if needed)
+# check:
+#   - CKV_AWS_163
+
+# Custom variables for checks
+# var-file: "terraform.tfvars"
+
+# Include/exclude specific file patterns
+include-all-checkov-policies: true
+
+# Logging level
+log-level: "INFO"
