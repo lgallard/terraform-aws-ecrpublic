@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.7.0...0.8.0) (2025-08-09)
+
+
+### Features
+
+* add Claude dispatch workflow for repository events ([#30](https://github.com/lgallard/terraform-aws-ecrpublic/issues/30)) ([df53765](https://github.com/lgallard/terraform-aws-ecrpublic/commit/df53765d16b4d6129bd4863bd8498db1ac4ba134))
+* add MCP server support for enhanced documentation access ([#32](https://github.com/lgallard/terraform-aws-ecrpublic/issues/32)) ([df1188d](https://github.com/lgallard/terraform-aws-ecrpublic/commit/df1188ddd7ccf2cbafae08ec798945a6f476e779))
+
 ## [0.7.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.6.0...0.7.0) (2025-07-30)
 
 
