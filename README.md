@@ -253,6 +253,74 @@ Solution: Tests use unique IDs, manual cleanup may be needed
 
 For detailed testing instructions and troubleshooting, see [test/README.md](test/README.md).
 
+## Pre-commit Hooks
+
+This module uses pre-commit hooks to ensure code quality and consistency. To set up pre-commit hooks:
+
+### Installation
+
+1. **Install pre-commit**:
+   ```bash
+   # Using pip
+   pip install pre-commit
+
+   # Using homebrew (macOS)
+   brew install pre-commit
+
+   # Using conda
+   conda install -c conda-forge pre-commit
+   ```
+
+2. **Install the git hook scripts**:
+   ```bash
+   pre-commit install
+   ```
+
+3. **Optional: Run hooks against all files**:
+   ```bash
+   pre-commit run --all-files
+   ```
+
+### Available Hooks
+
+The pre-commit configuration includes:
+
+- **terraform_fmt**: Automatically formats Terraform files
+- **terraform_validate**: Validates Terraform configuration (with us-east-1 region constraint)
+- **terraform_docs**: Updates documentation automatically
+- **terraform_tflint**: Terraform linting with ECR Public-specific rules
+- **terraform_tfsec**: Security scanning for Terraform configurations
+- **terraform_checkov**: Policy-as-code security scanning
+- **terraform_providers_lock**: Manages provider lock files
+- **check-yaml**: YAML file validation
+- **end-of-file-fixer**: Ensures files end with newline
+- **trailing-whitespace**: Removes trailing whitespace
+- **markdownlint**: Markdown formatting validation
+
+### ECR Public Specific Validations
+
+The configuration includes custom hooks for ECR Public:
+
+- **ECR Public catalog data validation**: Validates catalog data patterns
+- **Region constraint check**: Ensures us-east-1 region usage
+- **Examples validation**: Validates example configurations
+
+### Manual Execution
+
+You can run hooks manually:
+
+```bash
+# Run all hooks
+pre-commit run --all-files
+
+# Run specific hook
+pre-commit run terraform_fmt --all-files
+pre-commit run terraform_validate --all-files
+
+# Skip hooks for a commit (not recommended)
+git commit -m "message" --no-verify
+```
+
 ## Requirements
 
 No requirements.

@@ -1,0 +1,161 @@
+formatter: "markdown"
+
+version: ">= 0.16.0"
+
+header-from: main.tf
+footer-from: ""
+
+recursive:
+  enabled: false
+  path: modules
+
+sections:
+  hide: []
+  show: []
+
+content: |-
+  {{ .Header }}
+
+  ## Usage
+  You can use this module to create a public ECR registry using objects definition, or using the variables approach:
+
+  Check the [examples](examples/) for the **using objects** and the **using variables** snippets.
+
+  ### Using Objects example
+  This example creates a public ECR registry:
+
+  ```hcl
+  module "public-ecr" {
+    source = "lgallard/ecrpublic/aws"
+
+    repository_name = "lgallard-public-repo"
+
+    catalog_data = {
+      about_text        = "# Public repo\nPut your description here using Markdown format"
+      architectures     = ["ARM", "x86-64"]
+      description       = "Description"
+      logo_image_blob   = filebase64("image.png")
+      operating_systems = ["Linux"]
+      usage_text        = "# Usage\nHow to use your image goes here. Use Markdown format"
+    }
+  }
+  ```
+
+  ### Using variables
+  This example creates a public ECR registry using variables:
+
+  ```hcl
+  module "public-ecr" {
+    source = "lgallard/ecrpublic/aws"
+
+    repository_name = "lgallard-public-repo"
+
+    catalog_data_about_text        = "# Public repo\nPut your description here using Markdown format"
+    catalog_data_architectures     = ["ARM", "x86-64"]
+    catalog_data_description       = "Description"
+    catalog_data_logo_image_blob   = filebase64("image.png")
+    catalog_data_operating_systems = ["Linux"]
+    catalog_data_usage_text        = "# Usage\nHow to use your image goes here. Use Markdown format"
+  }
+  ```
+
+  ## Pre-commit Hooks
+
+  This module uses pre-commit hooks to ensure code quality and consistency. To set up pre-commit hooks:
+
+  ### Installation
+
+  1. **Install pre-commit**:
+     ```bash
+     # Using pip
+     pip install pre-commit
+
+     # Using homebrew (macOS)
+     brew install pre-commit
+
+     # Using conda
+     conda install -c conda-forge pre-commit
+     ```
+
+  2. **Install the git hook scripts**:
+     ```bash
+     pre-commit install
+     ```
+
+  3. **Optional: Run hooks against all files**:
+     ```bash
+     pre-commit run --all-files
+     ```
+
+  ### Available Hooks
+
+  The pre-commit configuration includes:
+
+  - **terraform_fmt**: Automatically formats Terraform files
+  - **terraform_validate**: Validates Terraform configuration (with us-east-1 region constraint)
+  - **terraform_docs**: Updates documentation automatically
+  - **terraform_tflint**: Terraform linting with ECR Public-specific rules
+  - **terraform_tfsec**: Security scanning for Terraform configurations
+  - **terraform_checkov**: Policy-as-code security scanning
+  - **terraform_providers_lock**: Manages provider lock files
+  - **check-yaml**: YAML file validation
+  - **end-of-file-fixer**: Ensures files end with newline
+  - **trailing-whitespace**: Removes trailing whitespace
+  - **markdownlint**: Markdown formatting validation
+
+  ### ECR Public Specific Validations
+
+  The configuration includes custom hooks for ECR Public:
+
+  - **ECR Public catalog data validation**: Validates catalog data patterns
+  - **Region constraint check**: Ensures us-east-1 region usage
+  - **Examples validation**: Validates example configurations
+
+  ### Manual Execution
+
+  You can run hooks manually:
+
+  ```bash
+  # Run all hooks
+  pre-commit run --all-files
+
+  # Run specific hook
+  pre-commit run terraform_fmt --all-files
+  pre-commit run terraform_validate --all-files
+
+  # Skip hooks for a commit (not recommended)
+  git commit -m "message" --no-verify
+  ```
+
+  {{ .Footer }}
+
+output:
+  file: "README.md"
+  mode: inject
+  template: |-
+    <!-- BEGIN_TF_DOCS -->
+    {{ .Content }}
+    <!-- END_TF_DOCS -->
+
+output-values:
+  enabled: false
+  from: ""
+
+sort:
+  enabled: true
+  by: name
+
+settings:
+  anchor: true
+  color: true
+  default: true
+  description: false
+  escape: true
+  hide-empty: false
+  html: true
+  indent: 2
+  lockfile: true
+  read-comments: true
+  required: true
+  sensitive: true
+  type: true

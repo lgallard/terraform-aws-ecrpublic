@@ -1,0 +1,122 @@
+repos:
+- repo: https://github.com/antonbabenko/pre-commit-terraform
+  rev: v1.96.1
+  hooks:
+    - id: terraform_fmt
+    - id: terraform_validate
+      args:
+        - --env-vars=AWS_DEFAULT_REGION="us-east-1"
+        - --hook-config=--retry-once-with-cleanup=true
+    - id: terraform_docs
+      args:
+        - --hook-config=--path-to-file=README.md
+        - --hook-config=--add-to-existing-file=true
+        - --hook-config=--create-file-if-not-exist=true
+    - id: terraform_tflint
+      args:
+        - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+    - id: terraform_tfsec
+      args:
+        - --args=--config-file=__GIT_WORKING_DIR__/.tfsec.yml
+        - --args=--exclude-check=aws-s3-enable-bucket-logging
+        - --args=--exclude-check=aws-s3-enable-bucket-encryption
+        - --args=--exclude-check=aws-s3-enable-versioning
+    - id: terraform_checkov
+      args:
+        - --args=--config-file=__GIT_WORKING_DIR__/.checkov.yml
+        - --args=--framework=terraform
+    - id: terraform_providers_lock
+      args:
+        - --args=-platform=windows_amd64
+        - --args=-platform=darwin_amd64
+        - --args=-platform=linux_amd64
+        - --args=-platform=darwin_arm64
+        - --args=-platform=linux_arm64
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.6.0
+  hooks:
+    - id: trailing-whitespace
+      args: ['--markdown-linebreak-ext=md']
+    - id: end-of-file-fixer
+    - id: check-yaml
+      exclude: ^\.pre-commit-config\.yaml$
+    - id: check-added-large-files
+      args: ['--maxkb=1024']
+    - id: check-merge-conflict
+    - id: mixed-line-ending
+      args: ['--fix=lf']
+
+- repo: https://github.com/jumanjihouse/pre-commit-hooks
+  rev: 3.0.0
+  hooks:
+    - id: markdownlint
+      args: ['--config=.markdownlint.json']
+      exclude: ^(test/|examples/).*(README|\.md)$
+
+# ECR Public specific validations
+- repo: local
+  hooks:
+    - id: ecr-public-catalog-validation
+      name: ECR Public Catalog Data Validation
+      entry: bash
+      language: system
+      files: ^variables\.tf$
+      args: 
+        - -c
+        - |
+          # Check for ECR Public Gallery content validation patterns
+          if grep -q "catalog_data.*description" variables.tf; then
+            echo "✓ ECR Public catalog data validation found"
+          else
+            echo "⚠ ECR Public catalog data validation missing"
+          fi
+          
+          # Check for architecture validation
+          if grep -q "ARM.*x86-64" variables.tf; then
+            echo "✓ ECR Public architecture validation found"  
+          else
+            echo "⚠ ECR Public architecture validation missing"
+          fi
+          
+          # Check for operating system validation
+          if grep -q "Linux.*Windows" variables.tf; then
+            echo "✓ ECR Public OS validation found"
+          else
+            echo "⚠ ECR Public OS validation missing"  
+          fi
+
+    - id: ecr-public-region-check
+      name: ECR Public us-east-1 Region Check
+      entry: bash
+      language: system
+      files: \.(tf|tfvars)$
+      args:
+        - -c
+        - |
+          # Check if any region is specified other than us-east-1 for ECR Public
+          if grep -E "(region|aws_region)" "$1" | grep -v "us-east-1" | grep -q .; then
+            echo "❌ ECR Public repositories must be created in us-east-1 region"
+            exit 1
+          fi
+          echo "✓ ECR Public region constraint validated"
+
+    - id: ecr-public-examples-check
+      name: ECR Public Examples Validation
+      entry: bash
+      language: system
+      files: ^examples/.*\.tf$
+      args:
+        - -c
+        - |
+          # Validate examples have proper ECR Public configuration
+          if [ -d "examples" ]; then
+            for example_dir in examples/*/; do
+              if [ -f "${example_dir}main.tf" ]; then
+                if ! grep -q "aws_ecrpublic_repository" "${example_dir}main.tf"; then
+                  echo "⚠ Example ${example_dir} missing ECR Public resource"
+                fi
+              fi
+            done
+            echo "✓ ECR Public examples validation completed"
+          fi

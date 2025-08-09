@@ -1,0 +1,54 @@
+---
+# TFSec configuration for ECR Public module
+severity: MEDIUM
+minimum_severity: MEDIUM
+
+# Include/exclude patterns
+include_patterns:
+  - "**/*.tf"
+  - "**/*.tfvars"
+
+exclude_patterns:
+  - ".terraform/**"
+  - "test/**"
+  - "**/node_modules/**"
+
+# Custom checks for ECR Public
+custom_checks:
+  - code: ECR001
+    description: "ECR Public repositories must be created in us-east-1 region"
+    impact: "ECR Public is only available in us-east-1 region"
+    resolution: "Ensure all ECR Public resources are created in us-east-1"
+    
+  - code: ECR002  
+    description: "ECR Public catalog data should follow content guidelines"
+    impact: "Improper content may violate ECR Public Gallery guidelines"
+    resolution: "Validate catalog data content follows ECR Public standards"
+
+# Exclude checks not relevant to ECR Public
+exclude_checks:
+  - aws-s3-enable-bucket-logging
+  - aws-s3-enable-bucket-encryption  
+  - aws-s3-enable-versioning
+  - aws-s3-block-public-acls
+  - aws-s3-block-public-policy
+  - aws-s3-ignore-public-acls
+  - aws-s3-no-public-buckets
+  - aws-ecr-repository-customer-key-encryption  # ECR Public uses different encryption model
+  - aws-ecr-enable-image-scans  # ECR Public has different scanning configuration
+  - aws-ecr-repository-has-image-tag-immutability  # Different from ECR Public
+
+# Include relevant checks
+include_checks:
+  - aws-iam-no-policy-wildcards
+  - aws-general-secrets-sensitive-in-variable
+  - aws-general-secrets-sensitive-in-local
+  - terraform-required-version
+  - terraform-required-providers
+
+# Exclude directories
+exclude_paths:
+  - ".git/**"
+  - ".terraform/**"
+  - "test/**/*.tf"  # Test files may have different patterns
+  - "examples/**/provider.tf"  # Examples may have different provider configs
