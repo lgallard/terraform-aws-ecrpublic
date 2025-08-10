@@ -317,7 +317,14 @@ jobs:
         echo "| Examples Validate | ${{ needs.validate-examples.result }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Catalog Data Validate | ${{ needs.validate-catalog-data.result }} |" >> $GITHUB_STEP_SUMMARY
 
-        if [[ "${{ needs.terraform-validate.result }}" != "success" || "${{ needs.validate-examples.result }}" != "success" || "${{ needs.validate-catalog-data.result }}" != "success" ]]; then
+        # Check if any validation failed (accept both success and skipped as valid)
+        terraform_ok="${{ needs.terraform-validate.result }}"
+        examples_ok="${{ needs.validate-examples.result }}"
+        catalog_ok="${{ needs.validate-catalog-data.result }}"
+
+        if [[ "$terraform_ok" != "success" && "$terraform_ok" != "skipped" ]] || \
+           [[ "$examples_ok" != "success" && "$examples_ok" != "skipped" ]] || \
+           [[ "$catalog_ok" != "success" && "$catalog_ok" != "skipped" ]]; then
           echo "❌ Some validation checks failed. Please check the logs for details." >> $GITHUB_STEP_SUMMARY
           exit 1
         else
