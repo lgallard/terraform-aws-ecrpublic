@@ -18,7 +18,7 @@ func TestTerraformECRPublicBasic(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-basic-%s", uniqueID)
-	
+
 	// Ensure safe test execution with quota and security checks
 	ensureSafeTestExecution(t, repositoryName)
 
@@ -61,7 +61,7 @@ func TestTerraformECRPublicWithVariableCatalogData(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-vars-%s", uniqueID)
-	
+
 	// Ensure safe test execution with quota and security checks
 	ensureSafeTestExecution(t, repositoryName)
 
@@ -100,7 +100,7 @@ func TestTerraformECRPublicWithObjectCatalogData(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-obj-%s", uniqueID)
-	
+
 	// Ensure safe test execution with quota and security checks
 	ensureSafeTestExecution(t, repositoryName)
 
@@ -137,7 +137,7 @@ func TestTerraformECRPublicWithTimeouts(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-timeout-%s", uniqueID)
-	
+
 	// Ensure safe test execution with quota and security checks
 	ensureSafeTestExecution(t, repositoryName)
 
@@ -175,7 +175,7 @@ func TestTerraformECRPublicVariableValidation(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-validation-%s", uniqueID)
-	
+
 	// Ensure safe test execution with quota and security checks
 	ensureSafeTestExecution(t, repositoryName)
 
@@ -210,11 +210,11 @@ func TestTerraformECRPublicVariableValidation(t *testing.T) {
 // TestTerraformECRPublicCompleteConfiguration tests complete ECR Public configuration
 func TestTerraformECRPublicCompleteConfiguration(t *testing.T) {
 	t.Parallel()
-	
+
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-complete-%s", uniqueID)
-	
+
 	// Ensure safe test execution with quota and security checks
 	ensureSafeTestExecution(t, repositoryName)
 
@@ -309,4 +309,3 @@ func validateAllOutputs(t *testing.T, terraformOptions *terraform.Options, expec
 	repositoryURI := terraform.Output(t, terraformOptions, "repository_uri")
 	assert.Equal(t, repositoryURI, repositoryURL, "repository_url should match repository_uri")
 }
-

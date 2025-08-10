@@ -44,14 +44,14 @@ services:
     depends_on:
       - db
       - redis
-      
+
   db:
     image: postgres:15
     environment:
       POSTGRES_DB: myapp
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      
+
   redis:
     image: redis:7-alpine
 ```
@@ -119,7 +119,7 @@ spec:
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `SPRING_PROFILES_ACTIVE` | Active Spring profiles | default | No |
-| `JAVA_OPTS` | JVM options | -Xmx1g -Xms512m | No |  
+| `JAVA_OPTS` | JVM options | -Xmx1g -Xms512m | No |
 | `DATABASE_URL` | Database connection URL | - | Yes |
 | `REDIS_URL` | Redis connection URL | - | No |
 | `LOG_LEVEL` | Application log level | INFO | No |
@@ -130,7 +130,7 @@ spec:
 # Application health
 curl http://localhost:8080/actuator/health
 
-# Readiness check  
+# Readiness check
 curl http://localhost:8080/actuator/health/readiness
 
 # Metrics endpoint

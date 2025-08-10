@@ -4,7 +4,7 @@ variable "repository_name" {
   type        = string
 }
 
-# catalog_data 
+# catalog_data
 variable "catalog_data" {
   description = "Catalog data configuration for the repository."
   type        = any

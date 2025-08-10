@@ -12,7 +12,7 @@ This document outlines Terraform-specific development guidelines for the terrafo
 - **versions.tf** - Provider version constraints
 - **examples/** - Example configurations for different use cases
   - **using_objects/** - Object-based catalog data configuration
-  - **using_variables/** - Variable-based catalog data configuration  
+  - **using_variables/** - Variable-based catalog data configuration
 - **test/** - Go-based Terratest integration tests
 
 ### Code Organization Principles
@@ -108,7 +108,7 @@ variable "catalog_data_description" {
   description = "Public description visible in ECR Public Gallery"
   type        = string
   default     = null
-  
+
   validation {
     condition     = var.catalog_data_description == null || length(var.catalog_data_description) <= 256
     error_message = "Description must be 256 characters or less for ECR Public Gallery visibility."
@@ -119,10 +119,10 @@ variable "catalog_data_architectures" {
   description = "Supported architectures for container images"
   type        = list(string)
   default     = []
-  
+
   validation {
     condition = alltrue([
-      for arch in var.catalog_data_architectures : 
+      for arch in var.catalog_data_architectures :
       contains(["ARM", "ARM 64", "x86", "x86-64"], arch)
     ])
     error_message = "Architectures must be one of: ARM, ARM 64, x86, x86-64."
@@ -133,10 +133,10 @@ variable "catalog_data_operating_systems" {
   description = "Supported operating systems for container images"
   type        = list(string)
   default     = []
-  
+
   validation {
     condition = alltrue([
-      for os in var.catalog_data_operating_systems : 
+      for os in var.catalog_data_operating_systems :
       contains(["Linux", "Windows"], os)
     ])
     error_message = "Operating systems must be one of: Linux, Windows."
@@ -169,10 +169,10 @@ func TestTerraformECRPublicExample(t *testing.T) {
     // Validate ECR Public repository creation
     repositoryName := terraform.Output(t, terraformOptions, "repository_name")
     repositoryURI := terraform.Output(t, terraformOptions, "repository_uri")
-    
+
     assert.NotEmpty(t, repositoryName)
     assert.Contains(t, repositoryURI, "public.ecr.aws")
-    
+
     // Validate catalog data was applied
     registryID := terraform.Output(t, terraformOptions, "registry_id")
     assert.NotEmpty(t, registryID)
@@ -204,7 +204,7 @@ provider "aws" {
 # ECR Public repositories can only be created in us-east-1
 resource "aws_ecrpublic_repository" "repo" {
   provider = aws.ecr_public
-  
+
   repository_name = var.repository_name
   # Repository configuration...
 }
@@ -218,7 +218,7 @@ resource "aws_ecrpublic_repository" "repo" {
 # No additional IAM policies or resource policies are required for public access
 resource "aws_ecrpublic_repository" "repo" {
   repository_name = var.repository_name
-  
+
   # Catalog data is publicly visible in the ECR Public Gallery
   catalog_data {
     description = "This description will be publicly visible"
@@ -237,7 +237,7 @@ variable "catalog_data_description" {
   description = "Public description visible in ECR Public Gallery"
   type        = string
   default     = null
-  
+
   validation {
     condition     = var.catalog_data_description == null || length(var.catalog_data_description) <= 256
     error_message = "Description must be 256 characters or less."
@@ -248,7 +248,7 @@ variable "catalog_data_about_text" {
   description = "Public about text in markdown format"
   type        = string
   default     = null
-  
+
   validation {
     condition     = var.catalog_data_about_text == null || length(var.catalog_data_about_text) > 0
     error_message = "About text cannot be empty when provided."
@@ -266,9 +266,9 @@ variable "catalog_data_about_text" {
 # Object-based approach
 module "public-ecr-object" {
   source = "lgallard/ecrpublic/aws"
-  
+
   repository_name = "my-app"
-  
+
   catalog_data = {
     description = "My application"
     about_text  = "# About\nDetailed information"
@@ -276,12 +276,12 @@ module "public-ecr-object" {
   }
 }
 
-# Variable-based approach  
+# Variable-based approach
 module "public-ecr-variables" {
   source = "lgallard/ecrpublic/aws"
-  
+
   repository_name = "my-app"
-  
+
   catalog_data_description = "My application"
   catalog_data_about_text  = "# About\nDetailed information"
   catalog_data_usage_text  = "# Usage\nInstructions here"
@@ -299,31 +299,31 @@ resource "aws_ecrpublic_repository" "optimized" {
   catalog_data {
     # Clear, searchable description
     description = "Production-ready Node.js application container"
-    
+
     # Comprehensive about text with markdown formatting
     about_text = <<-EOT
       # ${var.repository_name}
-      
+
       ## Description
       This container provides a production-ready Node.js application environment.
-      
+
       ## Features
       - Multi-stage builds for optimized size
       - Security hardening
       - Health checks included
     EOT
-    
+
     # Detailed usage instructions
     usage_text = <<-EOT
       # Usage
-      
+
       ## Quick Start
       ```bash
       docker pull public.ecr.aws/your-registry/${var.repository_name}:latest
       docker run -p 3000:3000 public.ecr.aws/your-registry/${var.repository_name}:latest
       ```
     EOT
-    
+
     # Proper architecture and OS tagging for filters
     architectures     = ["x86-64", "ARM 64"]
     operating_systems = ["Linux"]

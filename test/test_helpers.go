@@ -58,24 +58,24 @@ func generateMinimalVariableCatalogData(repositoryName string) map[string]interf
 // This reduces memory usage by avoiding large embedded strings in test files
 func loadTestData(filename, repositoryName string) (string, error) {
 	filePath := filepath.Join("testdata", filename)
-	
+
 	// Check file size before loading to prevent memory issues
 	info, err := os.Stat(filePath)
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Limit test data files to 1MB to prevent excessive memory usage
 	const maxFileSize = 1024 * 1024 // 1MB
 	if info.Size() > maxFileSize {
 		return "", fmt.Errorf("test data file %s is too large (%d bytes, max %d bytes)", filename, info.Size(), maxFileSize)
 	}
-	
+
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Replace placeholder with actual repository name (validation is handled by calling function)
 	return strings.ReplaceAll(string(content), "{{REPOSITORY_NAME}}", repositoryName), nil
 }
@@ -96,7 +96,7 @@ func validateRepositoryNameFormat(t *testing.T, repositoryName string) {
 	if len(repositoryName) > 256 {
 		t.Fatal("Repository name must be 256 characters or less")
 	}
-	
+
 	// Check for potentially dangerous patterns
 	if strings.Contains(repositoryName, "..") {
 		t.Fatal("Repository name cannot contain '..' patterns")
@@ -111,7 +111,7 @@ func validateRepositoryNameFormat(t *testing.T, repositoryName string) {
 func sanitizeRepositoryName(t *testing.T, repositoryName string) string {
 	// First validate the repository name format
 	validateRepositoryNameFormat(t, repositoryName)
-	
+
 	// Return the validated name (since it passed validation, it's safe to use)
 	return repositoryName
 }
@@ -126,7 +126,7 @@ func checkECRPublicQuota(t *testing.T) {
 	}
 
 	t.Log("Checking ECR Public repository quota...")
-	
+
 	// Get current repository count
 	cmd := exec.Command("aws", "ecr-public", "describe-repositories", "--region", "us-east-1", "--output", "json")
 	output, err := cmd.Output()
@@ -138,14 +138,14 @@ func checkECRPublicQuota(t *testing.T) {
 	var response struct {
 		Repositories []interface{} `json:"repositories"`
 	}
-	
+
 	if err := json.Unmarshal(output, &response); err != nil {
 		t.Logf("Warning: Could not parse ECR Public response: %v", err)
 		return
 	}
 
 	currentCount := len(response.Repositories)
-	
+
 	// ECR Public has a default limit of 10,000 repositories per region
 	// We'll warn at 70% (7,000) and fail at 85% (8,500) to be more conservative during parallel testing
 	const (
@@ -169,7 +169,7 @@ func checkECRPublicQuota(t *testing.T) {
 func ensureSafeTestExecution(t *testing.T, repositoryName string) {
 	// Validate repository name format for security
 	validateRepositoryNameFormat(t, repositoryName)
-	
+
 	// Check AWS quota to prevent exhaustion
 	checkECRPublicQuota(t)
 }
@@ -179,17 +179,17 @@ func ensureSafeTestExecution(t *testing.T, repositoryName string) {
 func setupTestCleanup(t *testing.T, terraformOptions *terraform.Options, repositoryName string) func() {
 	return func() {
 		t.Logf("Starting cleanup for repository: %s", repositoryName)
-		
+
 		// Comprehensive error recovery with multiple retry attempts
 		destroyAttempted := false
 		terraformSuccess := false
-		
+
 		// Attempt terraform destroy with error recovery
 		if terraformOptions != nil {
 			t.Logf("Attempting terraform destroy...")
 			destroyOutput, err := terraform.DestroyE(t, terraformOptions)
 			destroyAttempted = true
-			
+
 			if err != nil {
 				t.Logf("Warning: Terraform destroy failed: %v", err)
 				if destroyOutput != "" {
@@ -201,20 +201,20 @@ func setupTestCleanup(t *testing.T, terraformOptions *terraform.Options, reposit
 				terraformSuccess = true
 			}
 		}
-		
+
 		// If terraform destroy failed, attempt direct AWS cleanup
 		if destroyAttempted && !terraformSuccess {
 			t.Logf("Attempting direct AWS cleanup as fallback for repository: %s", repositoryName)
 			if cleanupErr := attemptDirectAWSCleanup(t, repositoryName); cleanupErr != nil {
 				t.Logf("Direct AWS cleanup also failed: %v", cleanupErr)
-				
+
 				// Final attempt: wait and retry direct cleanup (sometimes resources are in transition)
 				t.Logf("Waiting 10 seconds before final cleanup attempt...")
 				time.Sleep(10 * time.Second)
-				
+
 				if retryErr := attemptDirectAWSCleanup(t, repositoryName); retryErr != nil {
 					t.Logf("Final cleanup attempt also failed: %v", retryErr)
-					
+
 					// Provide comprehensive manual cleanup instructions
 					t.Logf("=== MANUAL CLEANUP REQUIRED ===")
 					t.Logf("Repository: %s", repositoryName)
@@ -233,7 +233,7 @@ func setupTestCleanup(t *testing.T, terraformOptions *terraform.Options, reposit
 				t.Logf("Direct AWS cleanup succeeded for repository: %s", repositoryName)
 			}
 		}
-		
+
 		if !destroyAttempted {
 			t.Logf("Warning: No cleanup attempted due to invalid terraform options")
 		}
@@ -248,31 +248,31 @@ func attemptDirectAWSCleanup(t *testing.T, repositoryName string) error {
 		t.Log("Skipping direct AWS cleanup in CI environment")
 		return fmt.Errorf("skipped in CI environment")
 	}
-	
+
 	t.Logf("Attempting direct AWS cleanup for: %s", repositoryName)
-	
+
 	// First, check if repository exists
-	checkCmd := exec.Command("aws", "ecr-public", "describe-repositories", 
-		"--repository-names", repositoryName, 
-		"--region", "us-east-1", 
+	checkCmd := exec.Command("aws", "ecr-public", "describe-repositories",
+		"--repository-names", repositoryName,
+		"--region", "us-east-1",
 		"--output", "json")
-	
+
 	if err := checkCmd.Run(); err != nil {
 		// Repository doesn't exist, cleanup not needed
 		t.Logf("Repository %s does not exist, no cleanup needed", repositoryName)
 		return nil
 	}
-	
+
 	// Repository exists, attempt to delete it
-	deleteCmd := exec.Command("aws", "ecr-public", "delete-repository", 
-		"--repository-name", repositoryName, 
-		"--region", "us-east-1", 
+	deleteCmd := exec.Command("aws", "ecr-public", "delete-repository",
+		"--repository-name", repositoryName,
+		"--region", "us-east-1",
 		"--force")
-	
+
 	if err := deleteCmd.Run(); err != nil {
 		return fmt.Errorf("failed to delete repository %s: %v", repositoryName, err)
 	}
-	
+
 	t.Logf("Successfully deleted repository via AWS CLI: %s", repositoryName)
 	return nil
 }

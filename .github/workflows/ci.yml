@@ -35,7 +35,7 @@ jobs:
     name: Quick Tests
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_integration_tests == 'true')
     needs: [validate]
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [validate, security, quick-tests, integration-tests]
     if: always()
-    
+
     steps:
     - name: CI Results Summary
       run: |
@@ -114,14 +114,14 @@ jobs:
         echo "| Security | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Quick Tests | ${{ needs.quick-tests.result }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Integration Tests | ${{ needs.integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
-        
+
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### ECR Public Module CI" >> $GITHUB_STEP_SUMMARY
         echo "- **Validation**: Terraform format, syntax, and ECR Public specific checks" >> $GITHUB_STEP_SUMMARY
         echo "- **Security**: Infrastructure security scanning with ECR Public considerations" >> $GITHUB_STEP_SUMMARY
         echo "- **Quick Tests**: Fast static tests for pull request validation" >> $GITHUB_STEP_SUMMARY
         echo "- **Integration Tests**: Real AWS ECR Public repository creation and testing" >> $GITHUB_STEP_SUMMARY
-        
+
         # Check for failures
         if [[ "${{ needs.validate.result }}" != "success" || "${{ needs.security.result }}" != "success" || "${{ needs.quick-tests.result }}" != "success" || "${{ needs.integration-tests.result }}" != "success" ]]; then
           echo "" >> $GITHUB_STEP_SUMMARY

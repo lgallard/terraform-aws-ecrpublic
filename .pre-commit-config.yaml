@@ -1,0 +1,52 @@
+# Pre-commit configuration for terraform-aws-ecrpublic
+# https://pre-commit.com/hooks.html
+
+repos:
+  # Generic pre-commit hooks for file formatting
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+        name: Remove trailing whitespace
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: check-yaml
+        name: Check YAML syntax
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=1000']
+
+  # Terraform-specific pre-commit hooks
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.83.5
+    hooks:
+      - id: terraform_fmt
+        name: Terraform format
+        description: Rewrites all Terraform configuration files to a canonical format
+
+      - id: terraform_validate
+        name: Terraform validate
+        description: Validates all Terraform configuration files
+
+      - id: terraform_docs
+        name: Terraform docs
+        description: Inserts input and output documentation into README.md
+        args:
+          - --hook-config=--path-to-file=README.md
+          - --hook-config=--add-to-existing-file=true
+          - --hook-config=--create-file-if-not-exist=true
+
+      - id: terraform_tflint
+        name: Terraform lint
+        description: Validates all Terraform configuration files with TFLint
+        args:
+          - --args=--only=terraform_deprecated_lookup
+
+  # Additional quality checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: check-case-conflict
+        name: Check for case conflicts

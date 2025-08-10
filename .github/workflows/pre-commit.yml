@@ -119,6 +119,7 @@ jobs:
             echo "- ✅ Terraform validation" >> $GITHUB_STEP_SUMMARY
             echo "- 📚 Documentation generation" >> $GITHUB_STEP_SUMMARY
             echo "- 🔍 TFLint analysis" >> $GITHUB_STEP_SUMMARY
+            echo "- 🔍 Quality checks" >> $GITHUB_STEP_SUMMARY
             echo "- 🧹 File formatting" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ Pre-commit checks failed" >> $GITHUB_STEP_SUMMARY
@@ -136,3 +137,5 @@ jobs:
           echo "- terraform_validate" >> $GITHUB_STEP_SUMMARY
           echo "- terraform_docs" >> $GITHUB_STEP_SUMMARY
           echo "- terraform_tflint" >> $GITHUB_STEP_SUMMARY
+          echo "- check-merge-conflict" >> $GITHUB_STEP_SUMMARY
+          echo "- check-case-conflict" >> $GITHUB_STEP_SUMMARY
