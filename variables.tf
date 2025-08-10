@@ -41,12 +41,10 @@ variable "catalog_data_architectures" {
   description = "The system architecture that the images in the repository are compatible with. On the Amazon ECR Public Gallery, the following supported architectures will appear as badges on the repository and are used as search filters: 'ARM', 'ARM 64', 'x86', 'x86-64'."
   type        = list(string)
   default     = []
-alog_data_architectures : 
 
   validation {
-    condition = var.catalog_data_architectures == null ? true : alltrue([
+    condition = length(var.catalog_data_architectures) == 0 || alltrue([
       for arch in var.catalog_data_architectures :
-
       contains(["ARM", "ARM 64", "x86", "x86-64"], arch)
     ])
     error_message = "Architectures must be one of: ARM, ARM 64, x86, x86-64."
@@ -78,13 +76,11 @@ variable "catalog_data_logo_image_blob" {
 variable "catalog_data_operating_systems" {
   description = "The operating systems that the images in the repository are compatible with. On the Amazon ECR Public Gallery, the following supported operating systems will appear as badges on the repository and are used as search filters: `Linux`, `Windows`."
   type        = list(string)
-
-  default     = null
+  default     = []
 
   validation {
-    condition = var.catalog_data_operating_systems == null ? true : alltrue([
+    condition = length(var.catalog_data_operating_systems) == 0 || alltrue([
       for os in var.catalog_data_operating_systems :
-
       contains(["Linux", "Windows"], os)
     ])
     error_message = "Operating systems must be one of: Linux, Windows."
