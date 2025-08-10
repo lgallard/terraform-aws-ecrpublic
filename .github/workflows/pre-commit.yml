@@ -92,6 +92,8 @@ jobs:
 
       - name: Run pre-commit on changed files (pull request)
         if: github.event_name == 'pull_request'
+        env:
+          SKIP: terraform_docs
         run: |
           # Get the list of changed files
           git fetch origin ${{ github.base_ref }}
@@ -101,6 +103,13 @@ jobs:
             echo "Running pre-commit on changed files:"
             echo "$CHANGED_FILES"
             pre-commit run --files $CHANGED_FILES
+
+            # Run terraform-docs separately in check-only mode for PRs
+            echo "Checking if documentation is up to date..."
+            terraform-docs --config .terraform-docs.yml .
+            if ! git diff --quiet; then
+              echo "::warning::Documentation is not up to date. Please run 'pre-commit run terraform_docs --all-files' locally."
+            fi
           else
             echo "No relevant files changed, skipping pre-commit checks"
           fi
