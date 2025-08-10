@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.8.0...0.9.0) (2025-08-10)
+
+
+### Features
+
+* add pre-commit workflow for automated code quality checks ([4b7f5c1](https://github.com/lgallard/terraform-aws-ecrpublic/commit/4b7f5c13803848ced32a580668c2e4dedbb96125))
+
+
+### Bug Fixes
+
+* add validation rules and fix security workflow issues ([#37](https://github.com/lgallard/terraform-aws-ecrpublic/issues/37)) ([e9f1b4c](https://github.com/lgallard/terraform-aws-ecrpublic/commit/e9f1b4c97b5883f5bf5028a38d57e37c84155b4b))
+
 ## [0.8.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.7.0...0.8.0) (2025-08-09)
 
 
