@@ -110,6 +110,7 @@ jobs:
         format: sarif
         soft_fail: true
         additional_args: --exclude-path test/ --custom-check-dir .tfsec-custom
+        sarif_file: tfsec-results.sarif
 
     - name: ECR Public Specific Security Checks
       run: |
@@ -167,14 +168,14 @@ jobs:
 
     - name: Upload checkov results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v3
-      if: always()
+      if: always() && hashFiles('checkov-results.sarif') != ''
       with:
         sarif_file: checkov-results.sarif
         category: checkov
 
     - name: Upload tfsec results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v3
-      if: always()
+      if: always() && hashFiles('tfsec-results.sarif') != ''
       with:
         sarif_file: tfsec-results.sarif
         category: tfsec
@@ -233,8 +234,9 @@ jobs:
       uses: aquasecurity/tfsec-action@v1.0.3
       with:
         working_directory: examples/${{ matrix.example }}
-        format: default
+        format: sarif
         soft_fail: true
+        sarif_file: tfsec-example-results.sarif
 
     - name: ECR Public Example Security Analysis
       run: |
