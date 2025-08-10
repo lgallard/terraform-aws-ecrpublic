@@ -74,7 +74,7 @@ jobs:
       matrix:
         terraform_version: ['1.3.0', '1.5.0', '1.9.0']
         aws_provider_version: ['5.0.0', '5.70.0']
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -89,11 +89,11 @@ jobs:
         # Create unique temporary directory for this matrix job to avoid race conditions
         TEMP_DIR="temp-${{ matrix.terraform_version }}-${{ matrix.aws_provider_version }}-${{ github.run_id }}"
         mkdir -p "$TEMP_DIR"
-        
+
         # Copy module files to temp directory
         cp -r *.tf examples/ "$TEMP_DIR/"
         cd "$TEMP_DIR"
-        
+
         # Create versions.tf with matrix provider version
         cat > versions.tf << EOF
         terraform {
@@ -152,7 +152,7 @@ jobs:
     strategy:
       matrix:
         example: ['using_objects', 'using_variables']
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -188,18 +188,18 @@ jobs:
       run: |
         cd examples/${{ matrix.example }}
         echo "Validating ECR Public Gallery content for ${{ matrix.example }}..."
-        
+
         # Check for appropriate catalog data configuration
         if ! grep -q "catalog_data" *.tf; then
           echo "Warning: No catalog_data configuration found in example"
         fi
-        
+
         # Check for repository naming conventions with robust parsing
         python3 << 'EOF'
         import re
         import os
         from pathlib import Path
-        
+
         # Find repository names in current directory Terraform files
         repo_names = []
         for tf_file in Path('.').glob('*.tf'):
@@ -210,7 +210,7 @@ jobs:
                 repo_names.extend(names)
             except Exception as e:
                 print(f"Error reading {tf_file}: {e}")
-        
+
         # Check naming conventions for the first found repository name
         if repo_names:
             repo_name = repo_names[0]  # Take first one for validation
@@ -218,7 +218,7 @@ jobs:
                 print(f"Warning: Repository name contains uppercase letters: {repo_name}")
                 print("ECR Public repository names should be lowercase")
         EOF
-        
+
         echo "ECR Public Gallery content validation completed"
 
   validate-catalog-data:
@@ -226,7 +226,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: check-changes
     if: needs.check-changes.outputs.skip_ci == 'false' && needs.check-changes.outputs.terraform_changed == 'true'
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -245,11 +245,11 @@ jobs:
         python3 << 'EOF'
         import re
         import sys
-        
+
         def validate_terraform_files():
             """Validate ECR Public catalog data in Terraform files"""
             issues = []
-            
+
             # Read main.tf and variables.tf
             try:
                 with open('main.tf', 'r') as f:
@@ -259,11 +259,11 @@ jobs:
             except FileNotFoundError as e:
                 issues.append(f"Missing required file: {e.filename}")
                 return issues
-            
+
             # Check for catalog_data configuration
             if 'catalog_data' not in main_content:
                 issues.append("No catalog_data configuration found in main.tf")
-            
+
             # Check for required catalog data variables
             required_vars = [
                 'catalog_data_description',
@@ -272,26 +272,26 @@ jobs:
                 'catalog_data_architectures',
                 'catalog_data_operating_systems'
             ]
-            
+
             for var in required_vars:
                 if f'variable "{var}"' not in vars_content:
                     issues.append(f"Missing catalog data variable: {var}")
-            
+
             # Check for validation blocks in variables
             arch_validation = 'contains(["ARM", "ARM 64", "x86", "x86-64"]'
             os_validation = 'contains(["Linux", "Windows"]'
-            
+
             if arch_validation not in vars_content:
                 issues.append("Missing architecture validation in variables.tf")
-            
+
             if os_validation not in vars_content:
                 issues.append("Missing operating system validation in variables.tf")
-            
+
             return issues
-        
+
         # Run validation
         validation_issues = validate_terraform_files()
-        
+
         if validation_issues:
             print("ECR Public catalog data validation failed:")
             for issue in validation_issues:
@@ -306,7 +306,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [check-changes, terraform-validate, validate-examples, validate-catalog-data]
     if: always() && needs.check-changes.outputs.skip_ci == 'false'
-    
+
     steps:
     - name: Validation Results
       run: |
@@ -316,8 +316,15 @@ jobs:
         echo "| Terraform Validate | ${{ needs.terraform-validate.result }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Examples Validate | ${{ needs.validate-examples.result }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Catalog Data Validate | ${{ needs.validate-catalog-data.result }} |" >> $GITHUB_STEP_SUMMARY
-        
-        if [[ "${{ needs.terraform-validate.result }}" != "success" || "${{ needs.validate-examples.result }}" != "success" || "${{ needs.validate-catalog-data.result }}" != "success" ]]; then
+
+        # Check if any validation failed (accept both success and skipped as valid)
+        terraform_ok="${{ needs.terraform-validate.result }}"
+        examples_ok="${{ needs.validate-examples.result }}"
+        catalog_ok="${{ needs.validate-catalog-data.result }}"
+
+        if [[ "$terraform_ok" != "success" && "$terraform_ok" != "skipped" ]] || \
+           [[ "$examples_ok" != "success" && "$examples_ok" != "skipped" ]] || \
+           [[ "$catalog_ok" != "success" && "$catalog_ok" != "skipped" ]]; then
           echo "❌ Some validation checks failed. Please check the logs for details." >> $GITHUB_STEP_SUMMARY
           exit 1
         else
@@ -329,7 +336,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: check-changes
     if: needs.check-changes.outputs.skip_ci == 'true'
-    
+
     steps:
     - name: Skip CI Notification
       run: |

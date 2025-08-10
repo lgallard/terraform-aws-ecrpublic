@@ -17,7 +17,7 @@ func TestECRPublicCatalogDataValidation(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-catalog-validation-%s", uniqueID)
-	
+
 	// Ensure safe test execution with quota and security checks
 	ensureSafeTestExecution(t, repositoryName)
 
@@ -57,7 +57,7 @@ func TestECRPublicMinimalCatalogData(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-minimal-catalog-%s", uniqueID)
-	
+
 	// Ensure safe test execution with quota and security checks
 	ensureSafeTestExecution(t, repositoryName)
 
@@ -96,7 +96,7 @@ func TestECRPublicComprehensiveCatalogData(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-comprehensive-%s", uniqueID)
-	
+
 	// Ensure safe test execution with quota and security checks
 	ensureSafeTestExecution(t, repositoryName)
 
@@ -187,7 +187,7 @@ func TestECRPublicMultiArchitectureSupport(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-multiarch-%s", uniqueID)
-	
+
 	// Ensure safe test execution with quota and security checks
 	ensureSafeTestExecution(t, repositoryName)
 
@@ -227,7 +227,7 @@ func TestECRPublicMarkdownFormatting(t *testing.T) {
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
 	repositoryName := fmt.Sprintf("terratest-markdown-%s", uniqueID)
-	
+
 	// Ensure safe test execution with quota and security checks
 	ensureSafeTestExecution(t, repositoryName)
 
@@ -274,4 +274,3 @@ func validateCatalogDataCompliance(t *testing.T, terraformOptions *terraform.Opt
 	// Additional compliance validations can be added here
 	// For now, successful creation indicates catalog data was valid
 }
-

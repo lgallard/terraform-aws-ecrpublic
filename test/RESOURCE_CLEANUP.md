@@ -40,7 +40,7 @@ The `cleanup-orphaned-resources.sh` script can identify and remove orphaned reso
 # Clean resources older than 6 hours (default)
 ./test/cleanup-orphaned-resources.sh us-east-1 6 false
 
-# Clean resources older than 1 hour  
+# Clean resources older than 1 hour
 ./test/cleanup-orphaned-resources.sh us-east-1 1 false
 ```
 

@@ -195,10 +195,10 @@ The test suite includes specialized validation functions:
 ```go
 func TestTerraformECRPublicBasic(t *testing.T) {
     t.Parallel()
-    
+
     uniqueID := strings.ToLower(random.UniqueId())
     repositoryName := fmt.Sprintf("terratest-basic-%s", uniqueID)
-    
+
     terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
         TerraformDir: "../",
         Vars: map[string]interface{}{
@@ -208,10 +208,10 @@ func TestTerraformECRPublicBasic(t *testing.T) {
             "AWS_DEFAULT_REGION": "us-east-1",
         },
     })
-    
+
     defer terraform.Destroy(t, terraformOptions)
     terraform.InitAndApply(t, terraformOptions)
-    
+
     validateECRPublicRepository(t, terraformOptions, repositoryName)
 }
 ```
@@ -230,10 +230,10 @@ func TestECRPublicCatalogDataValidation(t *testing.T) {
             "catalog_data_operating_systems": []string{"Linux"},
         },
     })
-    
+
     defer terraform.Destroy(t, terraformOptions)
     terraform.InitAndApply(t, terraformOptions)
-    
+
     validateCatalogDataCompliance(t, terraformOptions)
 }
 ```
@@ -367,11 +367,11 @@ curl -s https://gallery.ecr.aws/
 ```go
 func TestECRPublicNewFeature(t *testing.T) {
     t.Parallel()
-    
+
     // Generate unique repository name
     uniqueID := strings.ToLower(random.UniqueId())
     repositoryName := fmt.Sprintf("terratest-feature-%s", uniqueID)
-    
+
     // Configure terraform options
     terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
         TerraformDir: "../",
@@ -383,13 +383,13 @@ func TestECRPublicNewFeature(t *testing.T) {
             "AWS_DEFAULT_REGION": "us-east-1",
         },
     })
-    
+
     // Ensure cleanup
     defer terraform.Destroy(t, terraformOptions)
-    
+
     // Execute terraform
     terraform.InitAndApply(t, terraformOptions)
-    
+
     // Validate results
     validateECRPublicRepository(t, terraformOptions, repositoryName)
     // Add feature-specific validations

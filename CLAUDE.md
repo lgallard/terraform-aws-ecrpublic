@@ -12,7 +12,7 @@ This document outlines Terraform-specific development guidelines for the terrafo
 - **versions.tf** - Provider version constraints
 - **examples/** - Example configurations for different use cases
   - **using_objects/** - Object-based catalog data configuration
-  - **using_variables/** - Variable-based catalog data configuration  
+  - **using_variables/** - Variable-based catalog data configuration
 - **test/** - Go-based Terratest integration tests
 
 ### Code Organization Principles
@@ -108,7 +108,7 @@ variable "catalog_data_description" {
   description = "Public description visible in ECR Public Gallery"
   type        = string
   default     = null
-  
+
   validation {
     condition     = var.catalog_data_description == null || length(var.catalog_data_description) <= 256
     error_message = "Description must be 256 characters or less for ECR Public Gallery visibility."
@@ -119,10 +119,10 @@ variable "catalog_data_architectures" {
   description = "Supported architectures for container images"
   type        = list(string)
   default     = []
-  
+
   validation {
     condition = alltrue([
-      for arch in var.catalog_data_architectures : 
+      for arch in var.catalog_data_architectures :
       contains(["ARM", "ARM 64", "x86", "x86-64"], arch)
     ])
     error_message = "Architectures must be one of: ARM, ARM 64, x86, x86-64."
@@ -133,10 +133,10 @@ variable "catalog_data_operating_systems" {
   description = "Supported operating systems for container images"
   type        = list(string)
   default     = []
-  
+
   validation {
     condition = alltrue([
-      for os in var.catalog_data_operating_systems : 
+      for os in var.catalog_data_operating_systems :
       contains(["Linux", "Windows"], os)
     ])
     error_message = "Operating systems must be one of: Linux, Windows."
@@ -169,10 +169,10 @@ func TestTerraformECRPublicExample(t *testing.T) {
     // Validate ECR Public repository creation
     repositoryName := terraform.Output(t, terraformOptions, "repository_name")
     repositoryURI := terraform.Output(t, terraformOptions, "repository_uri")
-    
+
     assert.NotEmpty(t, repositoryName)
     assert.Contains(t, repositoryURI, "public.ecr.aws")
-    
+
     // Validate catalog data was applied
     registryID := terraform.Output(t, terraformOptions, "registry_id")
     assert.NotEmpty(t, registryID)
@@ -204,7 +204,7 @@ provider "aws" {
 # ECR Public repositories can only be created in us-east-1
 resource "aws_ecrpublic_repository" "repo" {
   provider = aws.ecr_public
-  
+
   repository_name = var.repository_name
   # Repository configuration...
 }
@@ -218,7 +218,7 @@ resource "aws_ecrpublic_repository" "repo" {
 # No additional IAM policies or resource policies are required for public access
 resource "aws_ecrpublic_repository" "repo" {
   repository_name = var.repository_name
-  
+
   # Catalog data is publicly visible in the ECR Public Gallery
   catalog_data {
     description = "This description will be publicly visible"
@@ -237,7 +237,7 @@ variable "catalog_data_description" {
   description = "Public description visible in ECR Public Gallery"
   type        = string
   default     = null
-  
+
   validation {
     condition     = var.catalog_data_description == null || length(var.catalog_data_description) <= 256
     error_message = "Description must be 256 characters or less."
@@ -248,7 +248,7 @@ variable "catalog_data_about_text" {
   description = "Public about text in markdown format"
   type        = string
   default     = null
-  
+
   validation {
     condition     = var.catalog_data_about_text == null || length(var.catalog_data_about_text) > 0
     error_message = "About text cannot be empty when provided."
@@ -266,9 +266,9 @@ variable "catalog_data_about_text" {
 # Object-based approach
 module "public-ecr-object" {
   source = "lgallard/ecrpublic/aws"
-  
+
   repository_name = "my-app"
-  
+
   catalog_data = {
     description = "My application"
     about_text  = "# About\nDetailed information"
@@ -276,12 +276,12 @@ module "public-ecr-object" {
   }
 }
 
-# Variable-based approach  
+# Variable-based approach
 module "public-ecr-variables" {
   source = "lgallard/ecrpublic/aws"
-  
+
   repository_name = "my-app"
-  
+
   catalog_data_description = "My application"
   catalog_data_about_text  = "# About\nDetailed information"
   catalog_data_usage_text  = "# Usage\nInstructions here"
@@ -299,31 +299,31 @@ resource "aws_ecrpublic_repository" "optimized" {
   catalog_data {
     # Clear, searchable description
     description = "Production-ready Node.js application container"
-    
+
     # Comprehensive about text with markdown formatting
     about_text = <<-EOT
       # ${var.repository_name}
-      
+
       ## Description
       This container provides a production-ready Node.js application environment.
-      
+
       ## Features
       - Multi-stage builds for optimized size
       - Security hardening
       - Health checks included
     EOT
-    
+
     # Detailed usage instructions
     usage_text = <<-EOT
       # Usage
-      
+
       ## Quick Start
       ```bash
       docker pull public.ecr.aws/your-registry/${var.repository_name}:latest
       docker run -p 3000:3000 public.ecr.aws/your-registry/${var.repository_name}:latest
       ```
     EOT
-    
+
     # Proper architecture and OS tagging for filters
     architectures     = ["x86-64", "ARM 64"]
     operating_systems = ["Linux"]
@@ -484,5 +484,85 @@ terraform {
 10. **Global Public Access** - Repositories are globally accessible without additional IAM configuration
 11. **Gallery Content Optimization** - Best practices for searchable, discoverable public repositories
 12. **Example-Driven Documentation** - Multiple configuration examples for different use cases
+
+## MCP Server Configuration
+
+### Available MCP Servers
+This project is configured to use the following Model Context Protocol (MCP) servers for enhanced documentation access:
+
+#### Terraform MCP Server
+**Purpose**: Access up-to-date Terraform and AWS provider documentation
+**Package**: `@modelcontextprotocol/server-terraform`
+
+**Local Configuration** (`.mcp.json`):
+```json
+{
+  "mcpServers": {
+    "terraform": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-terraform@latest"]
+    }
+  }
+}
+```
+
+**Usage Examples**:
+- `Look up aws_ecrpublic_repository resource documentation`
+- `Find the latest ECR Public catalog data examples`
+- `Search for AWS ECR Public Terraform modules`
+- `Get documentation for ECR Public Gallery integration`
+
+#### Context7 MCP Server
+**Purpose**: Access general library and framework documentation
+**Package**: `@upstash/context7-mcp`
+
+**Local Configuration** (`.mcp.json`):
+```json
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
+  }
+}
+```
+
+**Usage Examples**:
+- `Look up Go testing patterns for Terratest`
+- `Find AWS CLI ECR Public commands documentation`
+- `Get current container registry best practices`
+- `Search for GitHub Actions workflow patterns`
+
+### GitHub Actions Integration
+The MCP servers are automatically available in GitHub Actions through the claude.yml workflow configuration. Claude can access the same documentation in PRs and issues as available locally.
+
+### Usage Tips
+1. **Be Specific**: When requesting documentation, specify the exact resource or concept
+2. **Version Awareness**: Both servers provide current, version-specific documentation
+3. **Combine Sources**: Use Terraform MCP for ECR Public-specific docs, Context7 for general development patterns
+4. **Local vs CI**: Same MCP servers work in both local development and GitHub Actions
+
+### Example Workflows
+
+**ECR Public Resource Development**:
+```
+@claude I need to add support for ECR Public registry scanning configuration. Can you look up the latest aws_ecrpublic_repository documentation and show me how to implement enhanced security features?
+```
+
+**Testing Pattern Research**:
+```
+@claude Look up current Terratest patterns for testing ECR Public repositories and help me add comprehensive tests for the catalog data functionality.
+```
+
+**Gallery Optimization**:
+```
+@claude Research the latest ECR Public Gallery best practices and help me implement better discoverability and searchability for public repositories.
+```
+
+**Catalog Data Enhancement**:
+```
+@claude Look up the latest ECR Public catalog data patterns and help me improve the markdown content and metadata organization for better Gallery presentation.
+```
 
 *Note: This module focuses exclusively on AWS ECR Public Gallery best practices and patterns for public container distribution and open-source project hosting.*
