@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: check-changes
     if: needs.check-changes.outputs.skip_security == 'false'
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -104,7 +104,7 @@ jobs:
         checkov --config-file .checkov.yml --output cli --output sarif --output-file-path console,checkov-results.sarif
       continue-on-error: true
 
-    - name: Run tfsec on main module  
+    - name: Run tfsec on main module
       uses: aquasecurity/tfsec-action@v1.0.3
       with:
         format: sarif
@@ -114,14 +114,14 @@ jobs:
     - name: ECR Public Specific Security Checks
       run: |
         echo "Running ECR Public specific security checks..."
-        
+
         # Check for sensitive information in catalog data
         echo "Checking for potential sensitive information in catalog data..."
         if grep -ri "password\|secret\|token\|key\|credential" examples/ --include="*.tf"; then
           echo "⚠️ Warning: Potential sensitive information found in catalog data"
           echo "Remember that ECR Public catalog data is publicly visible"
         fi
-        
+
         # Check repository naming conventions with robust parsing
         echo "Checking repository naming conventions..."
         python3 << 'EOF'
@@ -129,7 +129,7 @@ jobs:
         import os
         import sys
         from pathlib import Path
-        
+
         # Find all repository names in Terraform files
         repo_names = []
         for tf_file in Path('.').rglob('*.tf'):
@@ -142,27 +142,27 @@ jobs:
                 repo_names.extend(names)
             except Exception as e:
                 print(f"Error reading {tf_file}: {e}")
-        
+
         # Check naming conventions
         for name in repo_names:
             if re.search(r'[A-Z]', name):
                 print(f"⚠️ Warning: Repository name '{name}' contains uppercase letters")
                 print("ECR Public repository names should be lowercase for consistency")
-            
+
             if len(name) > 256:
                 print(f"❌ Error: Repository name '{name}' exceeds 256 character limit")
                 sys.exit(1)
-        
+
         print(f"Checked {len(repo_names)} repository names")
         EOF
-        
+
         # Check for public content appropriateness
         echo "Checking catalog data for public repository appropriateness..."
         if grep -ri "internal\|private\|confidential\|restricted" examples/ --include="*.tf"; then
           echo "⚠️ Warning: Found terms suggesting internal use in public repository content"
           echo "Review catalog data to ensure it's appropriate for public visibility"
         fi
-        
+
         echo "ECR Public security checks completed"
 
     - name: Upload checkov results to GitHub Security tab
@@ -208,7 +208,7 @@ jobs:
     strategy:
       matrix:
         example: ['using_objects', 'using_variables']
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -240,24 +240,24 @@ jobs:
       run: |
         cd examples/${{ matrix.example }}
         echo "Analyzing example ${{ matrix.example }} for ECR Public security considerations..."
-        
+
         # Check for hardcoded repository names that might conflict
         if grep -q "lgallard-public-repo" *.tf; then
           echo "⚠️ Warning: Found hardcoded repository name 'lgallard-public-repo'"
           echo "Consider using variables for repository names in production"
         fi
-        
+
         # Check catalog data content for potential issues
         if grep -qi "test\|example\|demo" *.tf; then
           echo "ℹ️ Info: Example contains test/demo content (expected for examples)"
         fi
-        
+
         # Verify us-east-1 region usage
         if grep -r "region" *.tf | grep -v "us-east-1"; then
           echo "❌ Error: ECR Public repositories must be created in us-east-1 region"
           exit 1
         fi
-        
+
         echo "Example ${{ matrix.example }} security analysis completed"
 
   public-content-audit:
@@ -265,7 +265,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: check-changes
     if: needs.check-changes.outputs.skip_security == 'false'
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -286,12 +286,12 @@ jobs:
         import os
         import sys
         from pathlib import Path
-        
+
         def check_catalog_data_files():
             """Check catalog data content for public appropriateness"""
             issues = []
             warnings = []
-            
+
             # Patterns that might indicate internal/private content
             sensitive_patterns = [
                 r'\b(internal|private|confidential|restricted|secret)\b',
@@ -300,81 +300,81 @@ jobs:
                 r'\b(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)\b',  # Private IPs
                 r'\b[a-zA-Z0-9._%+-]+@(?!example\.com|test\.com)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b'  # Real emails
             ]
-            
+
             # Check all Terraform files for catalog data
             for tf_file in Path('.').rglob('*.tf'):
                 if '.terraform' in str(tf_file):
                     continue
-                    
+
                 try:
                     content = tf_file.read_text()
-                    
+
                     # Extract catalog data content
                     catalog_blocks = re.findall(r'catalog_data\s*[=\{].*?[\}]', content, re.DOTALL)
-                    
+
                     for block in catalog_blocks:
                         for pattern in sensitive_patterns:
                             matches = re.findall(pattern, block, re.IGNORECASE)
                             if matches:
                                 warnings.append(f"File {tf_file}: Found potentially sensitive content: {matches}")
-                    
+
                     # Check for appropriate markdown formatting
                     if 'about_text' in content or 'usage_text' in content:
                         if '# ' not in content and '## ' not in content:
                             warnings.append(f"File {tf_file}: Consider using markdown headers in catalog text")
-                
+
                 except Exception as e:
                     issues.append(f"Error reading {tf_file}: {e}")
-            
+
             return issues, warnings
-        
+
         def check_repository_names():
             """Check repository naming conventions"""
             issues = []
-            
+
             # Find all repository names
             for tf_file in Path('.').rglob('*.tf'):
                 if '.terraform' in str(tf_file):
                     continue
-                    
+
                 try:
                     content = tf_file.read_text()
-                    
+
                     # Find repository_name assignments
                     repo_names = re.findall(r'repository_name\s*=\s*"([^"]+)"', content)
-                    
+
                     for name in repo_names:
                         # Check naming conventions
                         if not re.match(r'^[a-z0-9][a-z0-9-_]*$', name):
                             issues.append(f"Repository name '{name}' in {tf_file} doesn't follow lowercase convention")
-                        
+
                         if len(name) > 256:
                             issues.append(f"Repository name '{name}' in {tf_file} exceeds 256 character limit")
-                        
+
                         if name.endswith('-') or name.endswith('_'):
                             issues.append(f"Repository name '{name}' in {tf_file} ends with special character")
-                
+
                 except Exception as e:
                     issues.append(f"Error reading {tf_file}: {e}")
-            
+
             return issues
-        
+
         # Run audits
         content_issues, content_warnings = check_catalog_data_files()
         naming_issues = check_repository_names()
-        
+
         # Report results
         if content_issues or naming_issues:
             print("❌ Public Content Audit found issues:")
             for issue in content_issues + naming_issues:
                 print(f"  - {issue}")
             sys.exit(1)
-        
+
         if content_warnings:
             print("⚠️ Public Content Audit warnings:")
             for warning in content_warnings:
                 print(f"  - {warning}")
-        
+
         print("✅ Public Content Audit completed successfully")
         EOF
 
@@ -383,7 +383,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [check-changes, security-scan, security-scan-examples, public-content-audit]
     if: always() && needs.check-changes.outputs.skip_security == 'false'
-    
+
     steps:
     - name: Security Results
       run: |
@@ -393,14 +393,14 @@ jobs:
         echo "| Main Module Security | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Examples Security | ${{ needs.security-scan-examples.result }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Public Content Audit | ${{ needs.public-content-audit.result }} |" >> $GITHUB_STEP_SUMMARY
-        
+
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### ECR Public Security Considerations" >> $GITHUB_STEP_SUMMARY
         echo "- Repository content is **publicly visible** in ECR Public Gallery" >> $GITHUB_STEP_SUMMARY
         echo "- Catalog data (description, about_text, usage_text) is **public**" >> $GITHUB_STEP_SUMMARY
         echo "- Repository names should follow lowercase conventions" >> $GITHUB_STEP_SUMMARY
         echo "- All repositories must be created in **us-east-1** region" >> $GITHUB_STEP_SUMMARY
-        
+
         if [[ "${{ needs.security-scan.result }}" != "success" || "${{ needs.security-scan-examples.result }}" != "success" || "${{ needs.public-content-audit.result }}" != "success" ]]; then
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "❌ Some security checks failed. Please review the logs and address issues before merging." >> $GITHUB_STEP_SUMMARY
@@ -411,11 +411,11 @@ jobs:
         fi
 
   skip-notification:
-    name: Skip Notification  
+    name: Skip Notification
     runs-on: ubuntu-latest
     needs: check-changes
     if: needs.check-changes.outputs.skip_security == 'true'
-    
+
     steps:
     - name: Skip Security Notification
       run: |

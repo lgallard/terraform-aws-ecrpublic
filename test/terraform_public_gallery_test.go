@@ -296,4 +296,3 @@ func validateRegionalConstraints(t *testing.T, terraformOptions *terraform.Optio
 
 	// The fact that the repository was created successfully validates regional constraints
 }
-
