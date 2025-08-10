@@ -23,7 +23,7 @@ variable "catalog_data_architectures" {
   default     = []
 
   validation {
-    condition = alltrue([
+    condition = var.catalog_data_architectures == null ? true : alltrue([
       for arch in var.catalog_data_architectures :
       contains(["ARM", "ARM 64", "x86", "x86-64"], arch)
     ])
