@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.9.0...0.10.0) (2025-08-10)
+
+
+### Features
+
+* add comprehensive input validation for variables ([#31](https://github.com/lgallard/terraform-aws-ecrpublic/issues/31)) ([36005b6](https://github.com/lgallard/terraform-aws-ecrpublic/commit/36005b6777e401bd466dd89d07f95fd8c98a7c88))
+
 ## [0.9.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.8.0...0.9.0) (2025-08-10)
 
 
