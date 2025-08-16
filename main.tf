@@ -47,7 +47,7 @@ locals {
   # Security validation for all text-based catalog data fields
   secure_content_check = alltrue([
     for field in [local._catalog_data_description, local._catalog_data_about_text, local._catalog_data_usage_text] :
-    field == null || !can(regex("(?i)<script|javascript:|vbscript:|data:|on[a-z]+\\s*=", field))
+    field == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", field))
   ])
 
   # Only create catalog_data block if at least one field has a value
@@ -75,6 +75,6 @@ locals {
   # Timeouts
   # If no timeouts block is provided, build one using the default values
   timeouts = (var.timeouts_delete != null || length(var.timeouts) > 0) ? [{
-    delete = coalesce(lookup(var.timeouts, "delete", null), var.timeouts_delete, null)
+    delete = coalesce(lookup(var.timeouts, "delete", null), var.timeouts_delete)
   }] : []
 }

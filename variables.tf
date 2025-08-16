@@ -42,7 +42,7 @@ variable "catalog_data_about_text" {
   }
 
   validation {
-    condition = var.catalog_data_about_text == null || !can(regex("(?i)<script|javascript:|vbscript:|data:|on[a-z]+\s*=", var.catalog_data_about_text))
+    condition = var.catalog_data_about_text == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", var.catalog_data_about_text))
     error_message = "About text must not contain potentially malicious scripts or executable content for security."
   }
 }
@@ -72,7 +72,7 @@ variable "catalog_data_description" {
   }
 
   validation {
-    condition = var.catalog_data_description == null || !can(regex("(?i)<script|javascript:|vbscript:|data:|on[a-z]+\s*=", var.catalog_data_description))
+    condition = var.catalog_data_description == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", var.catalog_data_description))
     error_message = "Description must not contain potentially malicious scripts or executable content for security."
   }
 }
@@ -123,7 +123,7 @@ variable "catalog_data_usage_text" {
   }
 
   validation {
-    condition = var.catalog_data_usage_text == null || !can(regex("(?i)<script|javascript:|vbscript:|data:|on[a-z]+\s*=", var.catalog_data_usage_text))
+    condition = var.catalog_data_usage_text == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", var.catalog_data_usage_text))
     error_message = "Usage text must not contain potentially malicious scripts or executable content for security."
   }
 }
