@@ -484,6 +484,196 @@ terraform {
 10. **Global Public Access** - Repositories are globally accessible without additional IAM configuration
 11. **Gallery Content Optimization** - Best practices for searchable, discoverable public repositories
 12. **Example-Driven Documentation** - Multiple configuration examples for different use cases
+13. **Security-First Design** - Enhanced input validation, content security, and least privilege principles
+
+## Security Best Practices
+
+### Content Security
+**ECR Public repositories are publicly accessible, requiring careful content validation:**
+
+```hcl
+# Enhanced security validations prevent malicious content
+variable "catalog_data_description" {
+  description = "Public description visible in ECR Public Gallery"
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.catalog_data_description == null || length(var.catalog_data_description) <= 256
+    error_message = "Description must be 256 characters or less for ECR Public Gallery visibility."
+  }
+
+  validation {
+    condition = var.catalog_data_description == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", var.catalog_data_description))
+    error_message = "Description must not contain potentially malicious scripts or executable content for security."
+  }
+}
+```
+
+### Repository Naming Security
+**Prevent reserved names and potential security issues:**
+
+```hcl
+variable "repository_name" {
+  description = "Name of the repository"
+  type        = string
+
+  validation {
+    condition     = can(regex("^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$", var.repository_name))
+    error_message = "Repository name must start and end with an alphanumeric character and can only contain lowercase letters, numbers, hyphens, underscores, and periods."
+  }
+
+  validation {
+    condition     = !can(regex("(?i)^(admin|aws|amazon|ecr|public|private|root|system|test|null|undefined)$", var.repository_name))
+    error_message = "Repository name must not use reserved or potentially confusing names for security and clarity."
+  }
+}
+```
+
+### Encryption Considerations
+**ECR Public Repository Encryption Limitations:**
+
+- **No Encryption Configuration**: Unlike private ECR repositories, ECR Public repositories do not support custom encryption configuration
+- **AWS Managed Encryption**: ECR Public uses AWS-managed encryption at rest by default
+- **Data in Transit**: All API communications use HTTPS/TLS encryption
+- **Content Validation**: Focus on input validation since encryption configuration is not available
+
+### IAM and Access Control
+**ECR Public repositories follow different security principles:**
+
+```hcl
+# ECR Public repositories are inherently public - no IAM policies needed for public access
+# Focus on AWS account-level controls for repository management
+
+# Example: Limit repository creation to specific roles (implemented outside this module)
+data "aws_iam_policy_document" "ecr_public_admin" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecr-public:CreateRepository",
+      "ecr-public:DeleteRepository",
+      "ecr-public:DescribeRepositories",
+      "ecr-public:PutRepositoryCatalogData"
+    ]
+    resources = ["*"]
+    
+    condition {
+      string_equals = {
+        "aws:RequestedRegion" = "us-east-1"
+      }
+    }
+  }
+}
+```
+
+### Logo Image Security
+**Secure handling of base64-encoded logo images:**
+
+```hcl
+variable "catalog_data_logo_image_blob" {
+  description = "Base64-encoded repository logo payload (Only visible for verified accounts)"
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.catalog_data_logo_image_blob == null || can(base64decode(var.catalog_data_logo_image_blob))
+    error_message = "Logo image blob must be valid base64-encoded data."
+  }
+
+  validation {
+    condition = var.catalog_data_logo_image_blob == null || length(var.catalog_data_logo_image_blob) <= 2097152  # 2MB in base64 ~= 1.5MB raw
+    error_message = "Logo image must be under 2MB when base64-encoded to prevent resource exhaustion."
+  }
+}
+```
+
+### Security Validation Patterns
+**Comprehensive input validation for public content:**
+
+```hcl
+# Content security validation function (example pattern)
+locals {
+  # Validate all text inputs for potential security issues
+  secure_content_check = alltrue([
+    for field in [local._catalog_data_description, local._catalog_data_about_text, local._catalog_data_usage_text] :
+    field == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", field))
+  ])
+}
+
+# Assert security validation in main resource
+resource "aws_ecrpublic_repository" "repo" {
+  repository_name = var.repository_name
+
+  # Fail fast if content security validation fails
+  lifecycle {
+    precondition {
+      condition     = local.secure_content_check
+      error_message = "All catalog data fields must pass security validation checks."
+    }
+  }
+
+  # Repository configuration...
+}
+```
+
+### Security Monitoring and Compliance
+**Recommended practices for ECR Public security:**
+
+1. **Tag-Based Resource Management**
+   ```hcl
+   tags = merge(var.tags, {
+     "Security:Public"     = "true"
+     "Security:Encryption" = "aws-managed"
+     "Compliance:SOC2"     = "compliant"
+   })
+   ```
+
+2. **Content Review Workflow**
+   - Implement peer review for all catalog data changes
+   - Use automated content scanning for security patterns
+   - Regular audit of public repository content
+
+3. **Access Logging**
+   - Enable CloudTrail for ECR Public API calls
+   - Monitor repository creation and modification events
+   - Alert on unauthorized repository changes
+
+### Threat Model Considerations
+**Security considerations specific to public repositories:**
+
+1. **Content Exposure**: All catalog data is publicly visible
+2. **Name Squatting**: Prevent malicious actors from claiming similar names
+3. **Brand Protection**: Logo images and descriptions represent your organization
+4. **Information Disclosure**: Avoid exposing sensitive information in public content
+
+### Security Testing Requirements
+**Enhanced testing for security validations:**
+
+```go
+// Example security test pattern
+func TestSecurityValidations(t *testing.T) {
+    maliciousInputs := []string{
+        "<script>alert('xss')</script>",
+        "javascript:alert('xss')",
+        "vbscript:msgbox('xss')",
+        "data:text/html,<script>alert('xss')</script>",
+        "onclick=\"alert('xss')\"",
+    }
+
+    for _, input := range maliciousInputs {
+        terraformOptions := &terraform.Options{
+            TerraformDir: "../examples/using_variables",
+            Vars: map[string]interface{}{
+                "repository_name": "test-repo",
+                "catalog_data_description": input,
+            },
+        }
+
+        _, err := terraform.InitAndApplyE(t, terraformOptions)
+        assert.Error(t, err, "Should reject malicious input: %s", input)
+    }
+}
+```
 
 ## MCP Server Configuration
 

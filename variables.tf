@@ -12,6 +12,11 @@ variable "repository_name" {
     condition     = length(var.repository_name) >= 2 && length(var.repository_name) <= 256
     error_message = "Repository name must be between 2 and 256 characters long."
   }
+
+  validation {
+    condition     = !can(regex("(?i)^(admin|aws|amazon|ecr|public|private|root|system|test|null|undefined)$", var.repository_name))
+    error_message = "Repository name must not use reserved or potentially confusing names for security and clarity."
+  }
 }
 
 # catalog_data
@@ -34,6 +39,11 @@ variable "catalog_data_about_text" {
   validation {
     condition     = var.catalog_data_about_text == null || length(var.catalog_data_about_text) <= 16384
     error_message = "About text must be 16384 characters or less for ECR Public Gallery."
+  }
+
+  validation {
+    condition = var.catalog_data_about_text == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", var.catalog_data_about_text))
+    error_message = "About text must not contain potentially malicious scripts or executable content for security."
   }
 }
 
@@ -60,6 +70,11 @@ variable "catalog_data_description" {
     condition     = var.catalog_data_description == null || length(var.catalog_data_description) <= 256
     error_message = "Description must be 256 characters or less for ECR Public Gallery visibility."
   }
+
+  validation {
+    condition = var.catalog_data_description == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", var.catalog_data_description))
+    error_message = "Description must not contain potentially malicious scripts or executable content for security."
+  }
 }
 
 variable "catalog_data_logo_image_blob" {
@@ -70,6 +85,11 @@ variable "catalog_data_logo_image_blob" {
   validation {
     condition     = var.catalog_data_logo_image_blob == null || can(base64decode(var.catalog_data_logo_image_blob))
     error_message = "Logo image blob must be valid base64-encoded data."
+  }
+
+  validation {
+    condition     = var.catalog_data_logo_image_blob == null || length(var.catalog_data_logo_image_blob) <= 2097152
+    error_message = "Logo image must be under 2MB when base64-encoded to prevent resource exhaustion."
   }
 }
 
@@ -100,6 +120,11 @@ variable "catalog_data_usage_text" {
   validation {
     condition     = var.catalog_data_usage_text == null || length(var.catalog_data_usage_text) <= 10240
     error_message = "Usage text must be 10240 characters or less for ECR Public Gallery."
+  }
+
+  validation {
+    condition = var.catalog_data_usage_text == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", var.catalog_data_usage_text))
+    error_message = "Usage text must not contain potentially malicious scripts or executable content for security."
   }
 }
 
