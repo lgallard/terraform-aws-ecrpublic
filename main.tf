@@ -2,6 +2,14 @@ resource "aws_ecrpublic_repository" "repo" {
 
   repository_name = var.repository_name
 
+  # Security lifecycle checks
+  lifecycle {
+    precondition {
+      condition     = local.secure_content_check
+      error_message = "All catalog data fields must pass security validation checks to prevent malicious content."
+    }
+  }
+
   # Catalog data configuration
   dynamic "catalog_data" {
     for_each = local.catalog_data
@@ -35,6 +43,12 @@ locals {
   _catalog_data_logo_image_blob   = lookup(var.catalog_data, "logo_image_blob", var.catalog_data_logo_image_blob)
   _catalog_data_operating_systems = lookup(var.catalog_data, "operating_systems", var.catalog_data_operating_systems)
   _catalog_data_usage_text        = lookup(var.catalog_data, "usage_text", var.catalog_data_usage_text)
+
+  # Security validation for all text-based catalog data fields
+  secure_content_check = alltrue([
+    for field in [local._catalog_data_description, local._catalog_data_about_text, local._catalog_data_usage_text] :
+    field == null || !can(regex("(?i)<script|javascript:|vbscript:|data:|on[a-z]+\\s*=", field))
+  ])
 
   # Only create catalog_data block if at least one field has a value
   _has_catalog_data = (
