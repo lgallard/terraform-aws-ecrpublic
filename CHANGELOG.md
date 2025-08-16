@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.10.0...0.11.0) (2025-08-16)
+
+
+### Features
+
+* improve security and policy best practices ([#47](https://github.com/lgallard/terraform-aws-ecrpublic/issues/47)) ([6eb8844](https://github.com/lgallard/terraform-aws-ecrpublic/commit/6eb884479eebfcaa2db706aba5196fd3d5eb90ef))
+
 ## [0.10.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.9.0...0.10.0) (2025-08-10)
 
 
