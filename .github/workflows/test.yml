@@ -65,7 +65,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24'
+        go-version: '1.23'
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
@@ -111,7 +111,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24'
+        go-version: '1.23'
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
@@ -155,7 +155,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24'
+        go-version: '1.23'
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
@@ -229,7 +229,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24'
+        go-version: '1.23'
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
@@ -284,7 +284,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24'
+        go-version: '1.23'
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
