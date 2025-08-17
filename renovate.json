@@ -18,6 +18,18 @@
       "groupName": "terraform providers",
       "datasources": ["terraform-provider"],
       "updateTypes": ["minor", "patch"]
+    },
+    {
+      "matchDatasources": ["golang-version"],
+      "ignoreUnstable": true,
+      "enabled": true
+    },
+    {
+      "matchDepTypes": ["action"],
+      "matchPackageNames": ["actions/setup-go"],
+      "extractVersion": "^v(?<version>.*)$",
+      "versioning": "go-mod-directive",
+      "ignoreUnstable": true
     }
   ]
 }
