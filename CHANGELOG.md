@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.10.0...0.11.0) (2025-08-17)
+
+
+### Features
+
+* improve security and policy best practices ([#47](https://github.com/lgallard/terraform-aws-ecrpublic/issues/47)) ([6eb8844](https://github.com/lgallard/terraform-aws-ecrpublic/commit/6eb884479eebfcaa2db706aba5196fd3d5eb90ef))
+
+
+### Bug Fixes
+
+* update Go version to 1.23 and configure Renovate to prevent pre-release versions ([#49](https://github.com/lgallard/terraform-aws-ecrpublic/issues/49)) ([f13071d](https://github.com/lgallard/terraform-aws-ecrpublic/commit/f13071da5ef5c52a8a5a63a3d2408e00c644ba9b))
+
 ## [0.10.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.9.0...0.10.0) (2025-08-10)
 
 
