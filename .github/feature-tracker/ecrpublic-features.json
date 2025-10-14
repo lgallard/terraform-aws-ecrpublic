@@ -30,10 +30,10 @@
     },
     "data_sources": {
       "aws_ecrpublic_authorization_token": {
-        "implemented": [],
-        "pending": [
+        "implemented": [
           "region"
         ],
+        "pending": [],
         "deprecated": []
       }
     },
