@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.12.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.11.0...0.12.0) (2025-12-27)
+
+
+### Features
+
+* Add aws_ecrpublic_repository_policy resource support ([#56](https://github.com/lgallard/terraform-aws-ecrpublic/issues/56)) ([43b893b](https://github.com/lgallard/terraform-aws-ecrpublic/commit/43b893b4188448bd347904a84d562beb695cf84b))
+
+
+### Bug Fixes
+
+* correct pre-commit formatting issues ([#59](https://github.com/lgallard/terraform-aws-ecrpublic/issues/59)) ([0c0f0b5](https://github.com/lgallard/terraform-aws-ecrpublic/commit/0c0f0b5ef1202133c08df9f7ce6e75194b20ec85))
+
 ## [0.11.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.10.0...0.11.0) (2025-08-17)
 
 
