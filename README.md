@@ -488,6 +488,8 @@ No modules.
 | Name | Description |
 |------|-------------|
 | <a name="output_arn"></a> [arn](#output\_arn) | Full ARN of the repository |
+| <a name="output_catalog_data"></a> [catalog\_data](#output\_catalog\_data) | The catalog data configuration for the repository |
+| <a name="output_gallery_url"></a> [gallery\_url](#output\_gallery\_url) | The URL to the repository in ECR Public Gallery |
 | <a name="output_id"></a> [id](#output\_id) | The registry ID where the repository was created. |
 | <a name="output_registry_id"></a> [registry\_id](#output\_registry\_id) | The registry ID where the repository was created. |
 | <a name="output_repository_arn"></a> [repository\_arn](#output\_repository\_arn) | Full ARN of the repository |
@@ -495,5 +497,6 @@ No modules.
 | <a name="output_repository_policy"></a> [repository\_policy](#output\_repository\_policy) | The repository policy JSON |
 | <a name="output_repository_uri"></a> [repository\_uri](#output\_repository\_uri) | The URI of the repository. |
 | <a name="output_repository_url"></a> [repository\_url](#output\_repository\_url) | The URL of the repository |
+| <a name="output_tags_all"></a> [tags\_all](#output\_tags\_all) | A map of tags assigned to the resource, including those inherited from the provider default\_tags |
 
 <!-- END_TF_DOCS -->

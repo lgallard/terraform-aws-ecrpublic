@@ -45,9 +45,11 @@ output "tags_all" {
 
 output "gallery_url" {
   description = "The URL to the repository in ECR Public Gallery"
-  value       = format("https://gallery.ecr.aws/%s/%s", 
-                      urlencode(aws_ecrpublic_repository.repo.registry_id),
-                      urlencode(aws_ecrpublic_repository.repo.repository_name))
+  value = format(
+    "https://gallery.ecr.aws/%s/%s",
+    urlencode(aws_ecrpublic_repository.repo.registry_id),
+    urlencode(aws_ecrpublic_repository.repo.repository_name)
+  )
 }
 
 output "catalog_data" {
