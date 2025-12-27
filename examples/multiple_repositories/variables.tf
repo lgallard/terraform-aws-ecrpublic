@@ -1,15 +1,7 @@
 # Variables for multiple repositories example
 
-variable "registry_alias" {
-  description = "ECR Public registry alias for repository URIs"
-  type        = string
-  default     = "myorganization"
-
-  validation {
-    condition     = can(regex("^[a-z0-9]([a-z0-9\\-]*[a-z0-9])?$", var.registry_alias))
-    error_message = "Registry alias must contain only lowercase letters, numbers, and hyphens."
-  }
-}
+# Registry alias is automatically assigned by AWS ECR Public
+# Users should replace [your-registry-alias] in usage instructions with their actual registry alias
 
 variable "environment" {
   description = "Environment name (e.g., dev, staging, production)"

@@ -9,7 +9,7 @@ locals {
       architectures     = ["x86-64", "ARM 64"]
       operating_systems = ["Linux"]
       about_text        = "# Frontend Application\n\nReact-based frontend application for the public web interface."
-      usage_text        = "# Usage\n\n```bash\ndocker pull public.ecr.aws/${var.registry_alias}/frontend:latest\ndocker run -p 3000:3000 public.ecr.aws/${var.registry_alias}/frontend:latest\n```"
+      usage_text        = "# Usage\n\n```bash\ndocker pull public.ecr.aws/[your-registry-alias]/frontend:latest\ndocker run -p 3000:3000 public.ecr.aws/[your-registry-alias]/frontend:latest\n```"
       tags = {
         Tier = "frontend"
         Type = "web-application"
@@ -20,7 +20,7 @@ locals {
       architectures     = ["x86-64"]
       operating_systems = ["Linux"]
       about_text        = "# API Server\n\nNode.js REST API server with Express framework providing backend services."
-      usage_text        = "# Usage\n\n```bash\ndocker pull public.ecr.aws/${var.registry_alias}/api-server:latest\ndocker run -p 8080:8080 -e DATABASE_URL=... public.ecr.aws/${var.registry_alias}/api-server:latest\n```"
+      usage_text        = "# Usage\n\n```bash\ndocker pull public.ecr.aws/[your-registry-alias]/api-server:latest\ndocker run -p 8080:8080 -e DATABASE_URL=... public.ecr.aws/[your-registry-alias]/api-server:latest\n```"
       tags = {
         Tier = "backend"
         Type = "api-service"
@@ -31,7 +31,7 @@ locals {
       architectures     = ["x86-64"]
       operating_systems = ["Linux"]
       about_text        = "# Background Worker\n\nAsynchronous task processor for handling background jobs and data processing."
-      usage_text        = "# Usage\n\n```bash\ndocker pull public.ecr.aws/${var.registry_alias}/worker:latest\ndocker run -e REDIS_URL=... public.ecr.aws/${var.registry_alias}/worker:latest\n```"
+      usage_text        = "# Usage\n\n```bash\ndocker pull public.ecr.aws/[your-registry-alias]/worker:latest\ndocker run -e REDIS_URL=... public.ecr.aws/[your-registry-alias]/worker:latest\n```"
       tags = {
         Tier = "backend"
         Type = "worker-service"

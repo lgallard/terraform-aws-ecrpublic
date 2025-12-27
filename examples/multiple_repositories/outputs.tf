@@ -53,17 +53,17 @@ output "object_repositories" {
 # Specific repository outputs for common use cases
 output "frontend_repository_uri" {
   description = "URI of the frontend repository"
-  value       = module.public-ecr["frontend"].repository_uri
+  value       = try(module.public-ecr["frontend"].repository_uri, null)
 }
 
 output "api_server_repository_uri" {
   description = "URI of the API server repository"
-  value       = module.public-ecr["api-server"].repository_uri
+  value       = try(module.public-ecr["api-server"].repository_uri, null)
 }
 
 output "worker_repository_uri" {
   description = "URI of the worker repository"
-  value       = module.public-ecr["worker"].repository_uri
+  value       = try(module.public-ecr["worker"].repository_uri, null)
 }
 
 # Docker pull commands for easy copy-paste
@@ -81,7 +81,6 @@ output "repository_summary" {
   value = {
     total_repositories = length(module.public-ecr)
     repository_names   = keys(module.public-ecr)
-    registry_alias     = var.registry_alias
     environment        = var.environment
     project_name       = var.project_name
   }
