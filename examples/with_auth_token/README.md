@@ -36,11 +36,11 @@ module "public-ecr-with-auth" {
   source = "lgallard/ecrpublic/aws//examples/with_auth_token"
 
   repository_name = "my-application"
-  
+
   catalog_data_description = "My public application container"
   catalog_data_about_text = <<-EOT
     # My Application
-    
+
     Production-ready container for my public application.
   EOT
 }
@@ -77,18 +77,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-          
+
       - name: Login to ECR Public
         run: |
           aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-          
+
       - name: Build and push
         run: |
           docker build -t ${{ secrets.ECR_REPOSITORY_URI }}:latest .
@@ -158,19 +158,16 @@ fi
 - [ECR Public User Guide](https://docs.aws.amazon.com/AmazonECR/latest/public/)
 - [Docker CLI Reference](https://docs.docker.com/engine/reference/commandline/login/)
 
-<!-- BEGIN_TF_DOCS -->
+<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
-| Name | Version |
-|------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0 |
+No requirements.
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.27.0 |
 
 ## Modules
 
@@ -189,10 +186,10 @@ fi
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_catalog_data_about_text"></a> [catalog\_data\_about\_text](#input\_catalog\_data\_about\_text) | Public about text in markdown format | `string` | `"# My Application\n\n## Description\nThis container provides a sample application for demonstrating ECR Public authentication.\n\n## Features\n- Lightweight container image\n- Production-ready configuration\n- Easy deployment\n"` | no |
-| <a name="input_catalog_data_architectures"></a> [catalog\_data\_architectures](#input\_catalog\_data\_architectures) | Supported architectures for container images | `list(string)` | <pre>[<br>  "x86-64"<br>]</pre> | no |
+| <a name="input_catalog_data_architectures"></a> [catalog\_data\_architectures](#input\_catalog\_data\_architectures) | Supported architectures for container images | `list(string)` | <pre>[<br/>  "x86-64"<br/>]</pre> | no |
 | <a name="input_catalog_data_description"></a> [catalog\_data\_description](#input\_catalog\_data\_description) | Public description visible in ECR Public Gallery | `string` | `"My application container"` | no |
-| <a name="input_catalog_data_operating_systems"></a> [catalog\_data\_operating\_systems](#input\_catalog\_data\_operating\_systems) | Supported operating systems for container images | `list(string)` | <pre>[<br>  "Linux"<br>]</pre> | no |
-| <a name="input_catalog_data_usage_text"></a> [catalog\_data\_usage\_text](#input\_catalog\_data\_usage\_text) | Public usage instructions in markdown format | `string` | `"# Usage\n\n## Authentication\n```bash\n# Get authorization token and login to ECR Public\naws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws\n```\n\n## Pull Image\n```bash\ndocker pull public.ecr.aws/your-registry/my-app:latest\n```\n\n## Push Image\n```bash\n# Tag your image\ndocker tag my-app:latest public.ecr.aws/your-registry/my-app:latest\n\n# Push to ECR Public\ndocker push public.ecr.aws/your-registry/my-app:latest\n```\n"` | no |
+| <a name="input_catalog_data_operating_systems"></a> [catalog\_data\_operating\_systems](#input\_catalog\_data\_operating\_systems) | Supported operating systems for container images | `list(string)` | <pre>[<br/>  "Linux"<br/>]</pre> | no |
+| <a name="input_catalog_data_usage_text"></a> [catalog\_data\_usage\_text](#input\_catalog\_data\_usage\_text) | Public usage instructions in markdown format | `string` | `"# Usage\n\n## Authentication\n`<pre>bash\n# Get authorization token and login to ECR Public\naws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws\n</pre>\n\n## Pull Image\n<pre>bash\ndocker pull public.ecr.aws/your-registry/my-app:latest\n</pre>\n\n## Push Image\n<pre>bash\n# Tag your image\ndocker tag my-app:latest public.ecr.aws/your-registry/my-app:latest\n\n# Push to ECR Public\ndocker push public.ecr.aws/your-registry/my-app:latest\n</pre>\n" | no |
 | <a name="input_repository_name"></a> [repository\_name](#input\_repository\_name) | Name of the repository | `string` | `"my-app"` | no |
 
 ## Outputs
@@ -201,11 +198,11 @@ fi
 |------|-------------|
 | <a name="output_authorization_token"></a> [authorization\_token](#output\_authorization\_token) | The authorization token (base64 encoded) |
 | <a name="output_aws_cli_login_command"></a> [aws\_cli\_login\_command](#output\_aws\_cli\_login\_command) | AWS CLI command to login to ECR Public |
-| <a name="output_docker_login_command"></a> [docker\_login\_command](#output\_docker\_login\_command) | Docker login command for ECR Public (use with authorization_token output) |
+| <a name="output_docker_login_command"></a> [docker\_login\_command](#output\_docker\_login\_command) | Docker login command for ECR Public (use with authorization\_token output) |
 | <a name="output_registry_id"></a> [registry\_id](#output\_registry\_id) | The registry ID where the repository was created |
 | <a name="output_repository_arn"></a> [repository\_arn](#output\_repository\_arn) | Full ARN of the repository |
 | <a name="output_repository_name"></a> [repository\_name](#output\_repository\_name) | Name of the repository |
 | <a name="output_repository_uri"></a> [repository\_uri](#output\_repository\_uri) | The URI of the repository |
 | <a name="output_repository_url"></a> [repository\_url](#output\_repository\_url) | The URL of the repository |
 | <a name="output_token_expires_at"></a> [token\_expires\_at](#output\_token\_expires\_at) | Token expiration timestamp |
-<!-- END_TF_DOCS -->
+<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
