@@ -33,6 +33,8 @@ output "repositories" {
       uri         = repo.repository_uri
       arn         = repo.arn
       registry_id = repo.registry_id
+      gallery_url = repo.gallery_url
+      tags_all    = repo.tags_all
     }
   }
 }
@@ -46,6 +48,8 @@ output "object_repositories" {
       uri         = repo.repository_uri
       arn         = repo.arn
       registry_id = repo.registry_id
+      gallery_url = repo.gallery_url
+      tags_all    = repo.tags_all
     }
   } : {}
 }
@@ -72,6 +76,14 @@ output "docker_pull_commands" {
   value = {
     for name, repo in module.public-ecr : name =>
     "docker pull ${repo.repository_uri}:latest"
+  }
+}
+
+# ECR Public Gallery URLs for easy browsing
+output "gallery_urls" {
+  description = "ECR Public Gallery URLs for all repositories"
+  value = {
+    for name, repo in module.public-ecr : name => repo.gallery_url
   }
 }
 
