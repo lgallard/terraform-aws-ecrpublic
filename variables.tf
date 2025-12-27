@@ -151,11 +151,6 @@ variable "create_repository_policy" {
   description = "Whether to create a repository policy for controlling push access"
   type        = bool
   default     = false
-
-  validation {
-    condition     = !var.create_repository_policy || var.repository_policy != null
-    error_message = "repository_policy must be provided when create_repository_policy is true."
-  }
 }
 
 variable "repository_policy" {

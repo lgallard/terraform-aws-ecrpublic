@@ -40,6 +40,13 @@ resource "aws_ecrpublic_repository_policy" "this" {
   count           = var.create_repository_policy ? 1 : 0
   repository_name = aws_ecrpublic_repository.repo.repository_name
   policy          = var.repository_policy
+
+  lifecycle {
+    precondition {
+      condition     = !var.create_repository_policy || var.repository_policy != null
+      error_message = "repository_policy must be provided when create_repository_policy is true."
+    }
+  }
 }
 
 locals {
