@@ -35,6 +35,13 @@ resource "aws_ecrpublic_repository" "repo" {
   tags = var.tags
 }
 
+# Repository policy for controlling push access
+resource "aws_ecrpublic_repository_policy" "this" {
+  count           = var.create_repository_policy ? 1 : 0
+  repository_name = aws_ecrpublic_repository.repo.repository_name
+  policy          = var.repository_policy
+}
+
 locals {
   # Helper values to determine if catalog_data should be created
   _catalog_data_about_text        = lookup(var.catalog_data, "about_text", var.catalog_data_about_text)

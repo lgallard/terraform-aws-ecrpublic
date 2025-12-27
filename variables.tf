@@ -146,6 +146,29 @@ variable "timeouts_delete" {
   }
 }
 
+# Repository policy
+variable "create_repository_policy" {
+  description = "Whether to create a repository policy for controlling push access"
+  type        = bool
+  default     = false
+}
+
+variable "repository_policy" {
+  description = "The JSON policy document for the repository"
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.repository_policy == null || can(jsondecode(var.repository_policy))
+    error_message = "Repository policy must be valid JSON when provided."
+  }
+
+  validation {
+    condition     = var.repository_policy == null || length(var.repository_policy) <= 10240
+    error_message = "Repository policy must be 10240 characters or less."
+  }
+}
+
 # Tags
 variable "tags" {
   description = "A map of tags to assign to the resource."
