@@ -5,7 +5,7 @@ Terraform module to create a Public [AWS ECR](https://aws.amazon.com/ecr) to sha
 ## Usage
 You can use this module to create a public ECR registry using objects definition, or using the variables approach:
 
-Check the [examples](examples/) for the **using objects** and the **using variables* snippets.
+Check the [examples](examples/) for the **using objects**, **using variables**, and **multiple repositories** snippets.
 
 ### Using Objects example
 This example creates an public ECR registry:
@@ -48,6 +48,58 @@ module "public-ecr" {
 }
 
 ```
+
+### Multiple Repositories
+
+You can create multiple ECR Public repositories using Terraform's native `for_each` capability at the module level:
+
+```hcl
+locals {
+  repositories = {
+    "frontend" = {
+      description       = "Frontend application container"
+      architectures     = ["x86-64", "ARM 64"]
+      operating_systems = ["Linux"]
+    }
+    "backend" = {
+      description       = "Backend API container"
+      architectures     = ["x86-64"]
+      operating_systems = ["Linux"]
+    }
+    "worker" = {
+      description       = "Background worker container"
+      architectures     = ["x86-64"]
+      operating_systems = ["Linux"]
+    }
+  }
+}
+
+module "public-ecr" {
+  source   = "lgallard/ecrpublic/aws"
+  for_each = local.repositories
+
+  repository_name                = each.key
+  catalog_data_description       = each.value.description
+  catalog_data_architectures     = each.value.architectures
+  catalog_data_operating_systems = each.value.operating_systems
+
+  # Shared configuration
+  catalog_data_about_text = "# ${title(each.key)} Application\n\nContainer image for the ${each.key} component."
+
+  tags = {
+    Environment = "production"
+    Service     = each.key
+    ManagedBy   = "terraform"
+  }
+}
+
+# Access individual repository outputs
+output "frontend_repository_uri" {
+  value = module.public-ecr["frontend"].repository_uri
+}
+```
+
+For comprehensive examples and patterns, see [examples/multiple_repositories](examples/multiple_repositories/).
 
 ## Authorization Tokens for Image Push
 
@@ -115,18 +167,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-          
+
       - name: Login to ECR Public
         run: |
           aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-          
+
       - name: Build and push
         run: |
           docker build -t ${{ secrets.ECR_REPOSITORY_URI }}:latest .
