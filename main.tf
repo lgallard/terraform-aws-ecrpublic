@@ -43,7 +43,7 @@ resource "aws_ecrpublic_repository_policy" "this" {
 
   lifecycle {
     precondition {
-      condition     = !var.create_repository_policy || var.repository_policy != null
+      condition     = var.repository_policy != null
       error_message = "repository_policy must be provided when create_repository_policy is true."
     }
   }
