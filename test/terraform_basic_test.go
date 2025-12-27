@@ -37,6 +37,7 @@ func TestExamplesValidate(t *testing.T) {
 	examples := []string{
 		"../examples/using_objects",
 		"../examples/using_variables",
+		"../examples/with_repository_policy",
 	}
 
 	for _, example := range examples {
@@ -57,6 +58,7 @@ func TestExamplesFormat(t *testing.T) {
 	examples := []string{
 		"../examples/using_objects",
 		"../examples/using_variables",
+		"../examples/with_repository_policy",
 	}
 
 	for _, example := range examples {
