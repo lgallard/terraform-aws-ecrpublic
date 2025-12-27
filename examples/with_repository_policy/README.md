@@ -306,3 +306,45 @@ terraform destroy
 ```
 
 Note: Ensure the repository is empty before destruction, as repositories containing images cannot be deleted.
+<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+## Requirements
+
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0 |
+
+## Providers
+
+No providers.
+
+## Modules
+
+| Name | Source | Version |
+|------|--------|---------|
+| <a name="module_public-ecr"></a> [public-ecr](#module\_public-ecr) | ../.. | n/a |
+
+## Resources
+
+No resources.
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_catalog_data"></a> [catalog\_data](#input\_catalog\_data) | Catalog data configuration for the repository | <pre>object({<br/>    description       = optional(string)<br/>    about_text        = optional(string)<br/>    usage_text        = optional(string)<br/>    architectures     = optional(list(string))<br/>    operating_systems = optional(list(string))<br/>    logo_image_blob   = optional(string)<br/>  })</pre> | <pre>{<br/>  "about_text": "# My Public App\n\nThis image is automatically built and published via CI/CD.",<br/>  "architectures": [<br/>    "x86-64",<br/>    "ARM 64"<br/>  ],<br/>  "description": "Public container image with CI/CD push access",<br/>  "operating_systems": [<br/>    "Linux"<br/>  ]<br/>}</pre> | no |
+| <a name="input_create_repository_policy"></a> [create\_repository\_policy](#input\_create\_repository\_policy) | Whether to create a repository policy for controlling push access | `bool` | `true` | no |
+| <a name="input_repository_name"></a> [repository\_name](#input\_repository\_name) | Name of the ECR Public repository | `string` | `"my-public-app"` | no |
+| <a name="input_repository_policy"></a> [repository\_policy](#input\_repository\_policy) | The JSON policy document for the repository. This example shows CI/CD push access. | `string` | `null` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | A map of tags to assign to the repository | `map(string)` | <pre>{<br/>  "Environment": "production",<br/>  "ManagedBy": "terraform"<br/>}</pre> | no |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| <a name="output_registry_id"></a> [registry\_id](#output\_registry\_id) | The registry ID where the repository was created |
+| <a name="output_repository_arn"></a> [repository\_arn](#output\_repository\_arn) | The ARN of the repository |
+| <a name="output_repository_name"></a> [repository\_name](#output\_repository\_name) | The name of the repository |
+| <a name="output_repository_policy"></a> [repository\_policy](#output\_repository\_policy) | The repository policy JSON |
+| <a name="output_repository_uri"></a> [repository\_uri](#output\_repository\_uri) | The URI of the repository |
+<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
