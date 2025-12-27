@@ -32,3 +32,8 @@ output "repository_url" {
   description = "The URL of the repository"
   value       = aws_ecrpublic_repository.repo.repository_uri
 }
+
+output "repository_policy" {
+  description = "The repository policy JSON"
+  value       = try(aws_ecrpublic_repository_policy.this[0].policy, null)
+}

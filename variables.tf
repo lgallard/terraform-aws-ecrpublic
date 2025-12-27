@@ -42,7 +42,7 @@ variable "catalog_data_about_text" {
   }
 
   validation {
-    condition = var.catalog_data_about_text == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", var.catalog_data_about_text))
+    condition     = var.catalog_data_about_text == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", var.catalog_data_about_text))
     error_message = "About text must not contain potentially malicious scripts or executable content for security."
   }
 }
@@ -72,7 +72,7 @@ variable "catalog_data_description" {
   }
 
   validation {
-    condition = var.catalog_data_description == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", var.catalog_data_description))
+    condition     = var.catalog_data_description == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", var.catalog_data_description))
     error_message = "Description must not contain potentially malicious scripts or executable content for security."
   }
 }
@@ -123,7 +123,7 @@ variable "catalog_data_usage_text" {
   }
 
   validation {
-    condition = var.catalog_data_usage_text == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", var.catalog_data_usage_text))
+    condition     = var.catalog_data_usage_text == null || !can(regex("(?i)(<script\\b|javascript:|vbscript:|data:[^,]*script|\\bon\\w+\\s*=|&#x?[0-9a-f]*;)", var.catalog_data_usage_text))
     error_message = "Usage text must not contain potentially malicious scripts or executable content for security."
   }
 }
@@ -143,6 +143,38 @@ variable "timeouts_delete" {
   validation {
     condition     = var.timeouts_delete == null || can(regex("^[0-9]+(ns|us|µs|ms|s|m|h)$", var.timeouts_delete))
     error_message = "Timeout must be a valid duration string (e.g., '30s', '5m', '1h')."
+  }
+}
+
+# Repository policy
+variable "create_repository_policy" {
+  description = "Whether to create a repository policy for controlling push access"
+  type        = bool
+  default     = false
+}
+
+variable "repository_policy" {
+  description = "The JSON policy document for the repository"
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.repository_policy == null || can(jsondecode(var.repository_policy))
+    error_message = "Repository policy must be valid JSON when provided."
+  }
+
+  validation {
+    condition = var.repository_policy == null || (
+      can(jsondecode(var.repository_policy)) &&
+      can(lookup(jsondecode(var.repository_policy), "Version", null)) &&
+      can(lookup(jsondecode(var.repository_policy), "Statement", null))
+    )
+    error_message = "Repository policy must be a valid IAM policy document with Version and Statement fields."
+  }
+
+  validation {
+    condition     = var.repository_policy == null || length(var.repository_policy) <= 10240
+    error_message = "Repository policy must be 10240 characters or less."
   }
 }
 
