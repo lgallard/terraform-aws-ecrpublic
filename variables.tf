@@ -151,6 +151,11 @@ variable "create_repository_policy" {
   description = "Whether to create a repository policy for controlling push access"
   type        = bool
   default     = false
+
+  validation {
+    condition     = !var.create_repository_policy || var.repository_policy != null
+    error_message = "repository_policy must be provided when create_repository_policy is true."
+  }
 }
 
 variable "repository_policy" {
@@ -161,6 +166,15 @@ variable "repository_policy" {
   validation {
     condition     = var.repository_policy == null || can(jsondecode(var.repository_policy))
     error_message = "Repository policy must be valid JSON when provided."
+  }
+
+  validation {
+    condition = var.repository_policy == null || (
+      can(jsondecode(var.repository_policy)) &&
+      can(lookup(jsondecode(var.repository_policy), "Version", null)) &&
+      can(lookup(jsondecode(var.repository_policy), "Statement", null))
+    )
+    error_message = "Repository policy must be a valid IAM policy document with Version and Statement fields."
   }
 
   validation {
