@@ -29,10 +29,10 @@ output "repositories" {
   description = "Complete repository information for all created repositories"
   value = {
     for name, repo in module.public-ecr : name => {
-      name         = repo.repository_name
-      uri          = repo.repository_uri
-      arn          = repo.arn
-      registry_id  = repo.registry_id
+      name        = repo.repository_name
+      uri         = repo.repository_uri
+      arn         = repo.arn
+      registry_id = repo.registry_id
     }
   }
 }
@@ -42,10 +42,10 @@ output "object_repositories" {
   description = "Repository information for object-based configuration example"
   value = var.enable_object_example ? {
     for name, repo in module.public-ecr-object : name => {
-      name         = repo.repository_name
-      uri          = repo.repository_uri
-      arn          = repo.arn
-      registry_id  = repo.registry_id
+      name        = repo.repository_name
+      uri         = repo.repository_uri
+      arn         = repo.arn
+      registry_id = repo.registry_id
     }
   } : {}
 }
@@ -70,8 +70,8 @@ output "worker_repository_uri" {
 output "docker_pull_commands" {
   description = "Docker pull commands for all repositories"
   value = {
-    for name, repo in module.public-ecr : name => 
-      "docker pull ${repo.repository_uri}:latest"
+    for name, repo in module.public-ecr : name =>
+    "docker pull ${repo.repository_uri}:latest"
   }
 }
 

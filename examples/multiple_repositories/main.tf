@@ -76,10 +76,10 @@ module "public-ecr-object" {
 
   tags = merge(
     {
-      Environment   = var.environment
-      Project       = var.project_name
-      ManagedBy     = "terraform"
-      ConfigMethod  = "object-based"
+      Environment  = var.environment
+      Project      = var.project_name
+      ManagedBy    = "terraform"
+      ConfigMethod = "object-based"
     },
     each.value.tags
   )

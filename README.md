@@ -85,7 +85,7 @@ module "public-ecr" {
 
   # Shared configuration
   catalog_data_about_text = "# ${title(each.key)} Application\n\nContainer image for the ${each.key} component."
-  
+
   tags = {
     Environment = "production"
     Service     = each.key
@@ -167,18 +167,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-          
+
       - name: Login to ECR Public
         run: |
           aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-          
+
       - name: Build and push
         run: |
           docker build -t ${{ secrets.ECR_REPOSITORY_URI }}:latest .
