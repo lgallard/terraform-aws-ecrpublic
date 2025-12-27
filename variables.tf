@@ -32,12 +32,12 @@ variable "catalog_data_about_text" {
   default     = null
 
   validation {
-    condition     = var.catalog_data_about_text == null || (var.catalog_data_about_text != null && length(var.catalog_data_about_text) > 0)
+    condition     = var.catalog_data_about_text == null || try(length(var.catalog_data_about_text) > 0, false)
     error_message = "About text cannot be empty when provided."
   }
 
   validation {
-    condition     = var.catalog_data_about_text == null || (var.catalog_data_about_text != null && length(var.catalog_data_about_text) <= 16384)
+    condition     = var.catalog_data_about_text == null || try(length(var.catalog_data_about_text) <= 16384, true)
     error_message = "About text must be 16384 characters or less for ECR Public Gallery."
   }
 
@@ -67,7 +67,7 @@ variable "catalog_data_description" {
   default     = null
 
   validation {
-    condition     = var.catalog_data_description == null || (var.catalog_data_description != null && length(var.catalog_data_description) <= 256)
+    condition     = var.catalog_data_description == null || try(length(var.catalog_data_description) <= 256, true)
     error_message = "Description must be 256 characters or less for ECR Public Gallery visibility."
   }
 
@@ -88,7 +88,7 @@ variable "catalog_data_logo_image_blob" {
   }
 
   validation {
-    condition     = var.catalog_data_logo_image_blob == null || (var.catalog_data_logo_image_blob != null && length(var.catalog_data_logo_image_blob) <= 2097152)
+    condition     = var.catalog_data_logo_image_blob == null || try(length(var.catalog_data_logo_image_blob) <= 2097152, true)
     error_message = "Logo image must be under 2MB when base64-encoded to prevent resource exhaustion."
   }
 }
@@ -113,12 +113,12 @@ variable "catalog_data_usage_text" {
   default     = null
 
   validation {
-    condition     = var.catalog_data_usage_text == null || (var.catalog_data_usage_text != null && length(var.catalog_data_usage_text) > 0)
+    condition     = var.catalog_data_usage_text == null || try(length(var.catalog_data_usage_text) > 0, false)
     error_message = "Usage text cannot be empty when provided."
   }
 
   validation {
-    condition     = var.catalog_data_usage_text == null || (var.catalog_data_usage_text != null && length(var.catalog_data_usage_text) <= 10240)
+    condition     = var.catalog_data_usage_text == null || try(length(var.catalog_data_usage_text) <= 10240, true)
     error_message = "Usage text must be 10240 characters or less for ECR Public Gallery."
   }
 
@@ -173,7 +173,7 @@ variable "repository_policy" {
   }
 
   validation {
-    condition     = var.repository_policy == null || (var.repository_policy != null && length(var.repository_policy) <= 10240)
+    condition     = var.repository_policy == null || try(length(var.repository_policy) <= 10240, true)
     error_message = "Repository policy must be 10240 characters or less."
   }
 }
