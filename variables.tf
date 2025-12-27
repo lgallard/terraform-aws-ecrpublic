@@ -164,7 +164,7 @@ variable "repository_policy" {
   }
 
   validation {
-    condition = var.repository_policy == null || (
+    condition     = var.repository_policy == null || (
       can(jsondecode(var.repository_policy)) &&
       can(lookup(jsondecode(var.repository_policy), "Version", null)) &&
       can(lookup(jsondecode(var.repository_policy), "Statement", null))
