@@ -556,7 +556,7 @@ data "aws_iam_policy_document" "ecr_public_admin" {
       "ecr-public:PutRepositoryCatalogData"
     ]
     resources = ["*"]
-    
+
     condition {
       string_equals = {
         "aws:RequestedRegion" = "us-east-1"
