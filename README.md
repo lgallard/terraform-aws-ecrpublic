@@ -49,6 +49,92 @@ module "public-ecr" {
 
 ```
 
+## Authorization Tokens for Image Push
+
+ECR Public repositories require authentication tokens for programmatic operations like pushing container images. The `aws_ecrpublic_authorization_token` data source provides the necessary credentials for CI/CD integration.
+
+### Important Notes
+
+- **Regional Constraint**: Authorization tokens must be retrieved from `us-east-1` region (same as ECR Public repositories)
+- **Token Expiration**: Authorization tokens expire after 12 hours and should be refreshed for long-running processes
+- **CI/CD Integration**: Essential for automated image pushing in GitHub Actions, Jenkins, and other CI/CD systems
+
+### Using Authorization Tokens
+
+```hcl
+# Authorization token for ECR Public authentication
+data "aws_ecrpublic_authorization_token" "token" {}
+
+module "public-ecr" {
+  source = "lgallard/ecrpublic/aws"
+
+  repository_name = "my-application"
+
+  catalog_data = {
+    description       = "My application container"
+    architectures     = ["x86-64"]
+    operating_systems = ["Linux"]
+  }
+}
+
+# Outputs for CI/CD integration
+output "repository_uri" {
+  value = module.public-ecr.repository_uri
+}
+
+output "authorization_token" {
+  value     = data.aws_ecrpublic_authorization_token.token.authorization_token
+  sensitive = true
+}
+```
+
+### Docker Authentication Commands
+
+```bash
+# Method 1: Using AWS CLI (Recommended)
+aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+# Method 2: Using Terraform output
+echo "$AUTHORIZATION_TOKEN" | docker login --username AWS --password-stdin public.ecr.aws
+
+# Push your image
+docker tag my-app:latest <repository_uri>:latest
+docker push <repository_uri>:latest
+```
+
+### GitHub Actions Integration
+
+```yaml
+name: Push to ECR Public
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          
+      - name: Login to ECR Public
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+          
+      - name: Build and push
+        run: |
+          docker build -t ${{ secrets.ECR_REPOSITORY_URI }}:latest .
+          docker push ${{ secrets.ECR_REPOSITORY_URI }}:latest
+```
+
+For a complete example with authorization token integration, see [examples/with_auth_token](examples/with_auth_token/).
+
 ## Testing
 
 This module includes comprehensive automated testing using [Terratest](https://github.com/gruntwork-io/terratest) with specialized ECR Public testing patterns following CLAUDE.md guidelines.
