@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.13.0...0.13.1) (2025-12-28)
+
+
+### Bug Fixes
+
+* simplify CI by skipping terraform_docs in favor of local pre-commit ([5e1080a](https://github.com/lgallard/terraform-aws-ecrpublic/commit/5e1080a3db9ba9df5a72170f28a53125e54d23bd))
+
 ## [0.13.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.12.0...0.13.0) (2025-12-28)
 
 
