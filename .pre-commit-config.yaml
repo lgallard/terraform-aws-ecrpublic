@@ -32,9 +32,7 @@ repos:
         name: Terraform docs
         description: Inserts input and output documentation into README.md
         args:
-          - --hook-config=--path-to-file=README.md
-          - --hook-config=--add-to-existing-file=true
-          - --hook-config=--create-file-if-not-exist=true
+          - --args=--config=.terraform-docs.yml
 
       - id: terraform_tflint
         name: Terraform lint

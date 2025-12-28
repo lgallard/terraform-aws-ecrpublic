@@ -434,9 +434,6 @@ No Modules.
 | id | The repository name. |
 | registry\_id | The registry ID where the repository was created. |
 | repository\_uri | The URI of the repository. |
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
-README.md updated successfully
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 
 <!-- BEGIN_TF_DOCS -->
 

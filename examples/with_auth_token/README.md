@@ -158,7 +158,9 @@ fi
 - [ECR Public User Guide](https://docs.aws.amazon.com/AmazonECR/latest/public/)
 - [Docker CLI Reference](https://docs.docker.com/engine/reference/commandline/login/)
 
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- BEGIN_TF_DOCS -->
+
+
 ## Requirements
 
 No requirements.
@@ -205,4 +207,5 @@ No requirements.
 | <a name="output_repository_uri"></a> [repository\_uri](#output\_repository\_uri) | The URI of the repository |
 | <a name="output_repository_url"></a> [repository\_url](#output\_repository\_url) | The URL of the repository |
 | <a name="output_token_expires_at"></a> [token\_expires\_at](#output\_token\_expires\_at) | Token expiration timestamp |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+
+<!-- END_TF_DOCS -->

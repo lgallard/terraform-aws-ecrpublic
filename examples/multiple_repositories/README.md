@@ -271,7 +271,9 @@ module "public-ecr" {
   # ... rest of configuration
 }
 ```
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- BEGIN_TF_DOCS -->
+
+
 ## Requirements
 
 | Name | Version |
@@ -320,4 +322,5 @@ No resources.
 | <a name="output_repository_summary"></a> [repository\_summary](#output\_repository\_summary) | Summary of created repositories |
 | <a name="output_repository_uris"></a> [repository\_uris](#output\_repository\_uris) | Map of repository names to their URIs |
 | <a name="output_worker_repository_uri"></a> [worker\_repository\_uri](#output\_worker\_repository\_uri) | URI of the worker repository |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+
+<!-- END_TF_DOCS -->

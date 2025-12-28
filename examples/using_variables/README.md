@@ -17,7 +17,9 @@ module "public-ecr" {
 
 }
 ```
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- BEGIN_TF_DOCS -->
+
+
 ## Requirements
 
 No requirements.
@@ -59,4 +61,5 @@ No resources.
 | <a name="output_repository_name"></a> [repository\_name](#output\_repository\_name) | Name of the repository |
 | <a name="output_repository_url"></a> [repository\_url](#output\_repository\_url) | The URL of the repository |
 | <a name="output_tags_all"></a> [tags\_all](#output\_tags\_all) | A map of tags assigned to the resource, including those inherited from the provider default\_tags |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+
+<!-- END_TF_DOCS -->

@@ -306,7 +306,9 @@ terraform destroy
 ```
 
 Note: Ensure the repository is empty before destruction, as repositories containing images cannot be deleted.
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- BEGIN_TF_DOCS -->
+
+
 ## Requirements
 
 | Name | Version |
@@ -347,4 +349,5 @@ No resources.
 | <a name="output_repository_name"></a> [repository\_name](#output\_repository\_name) | The name of the repository |
 | <a name="output_repository_policy"></a> [repository\_policy](#output\_repository\_policy) | The repository policy JSON |
 | <a name="output_repository_uri"></a> [repository\_uri](#output\_repository\_uri) | The URI of the repository |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+
+<!-- END_TF_DOCS -->
