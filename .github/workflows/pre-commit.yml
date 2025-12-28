@@ -86,6 +86,13 @@ jobs:
       - name: Install pre-commit hooks
         run: pre-commit install-hooks
 
+      - name: Verify terraform-docs version
+        run: |
+          echo "terraform-docs version:"
+          terraform-docs --version
+          echo "terraform-docs location:"
+          which terraform-docs
+
       - name: Run pre-commit on all files (push to main)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: pre-commit run --all-files
