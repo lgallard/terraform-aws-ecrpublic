@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.13.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.12.0...0.13.0) (2025-12-28)
+
+
+### Features
+
+* Add enhanced outputs (tags_all, gallery_url, catalog_data) ([#63](https://github.com/lgallard/terraform-aws-ecrpublic/issues/63)) ([bb06dec](https://github.com/lgallard/terraform-aws-ecrpublic/commit/bb06dec16af77d10b1ee0411178f3cbf11447aca))
+* Add multiple repositories support via module-level for_each pattern ([#61](https://github.com/lgallard/terraform-aws-ecrpublic/issues/61)) ([c6e0a4e](https://github.com/lgallard/terraform-aws-ecrpublic/commit/c6e0a4e6e04b4931db8dead504ce3052e849036e))
+
+
+### Bug Fixes
+
+* add debugging and update cache key in pre-commit workflow ([282a490](https://github.com/lgallard/terraform-aws-ecrpublic/commit/282a4900cbd9f919211fa0df63e336f863b6fd55))
+* clean up duplicate documentation markers in README.md ([b3667f0](https://github.com/lgallard/terraform-aws-ecrpublic/commit/b3667f0ea3cbb9d8feac6fbd2031ec7338417230))
+* revert to standard pre-commit terraform-docs markers ([2c44ef7](https://github.com/lgallard/terraform-aws-ecrpublic/commit/2c44ef7f8263cb626930bb17185cfb58667a1563))
+* standardize terraform-docs configuration and markers ([d2e2614](https://github.com/lgallard/terraform-aws-ecrpublic/commit/d2e26145b5ba35e82fc0b83c5f0114e9ad78d3a3))
+* update example READMEs with terraform-docs ([1220381](https://github.com/lgallard/terraform-aws-ecrpublic/commit/1220381c3e51e730006fd224b0fbea85987f0463))
+* update terraform-docs to v0.20.0 in CI workflow ([a0a7d64](https://github.com/lgallard/terraform-aws-ecrpublic/commit/a0a7d64c0285969c83244b23b8905325187102e6))
+
 ## [0.12.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.11.0...0.12.0) (2025-12-27)
 
 
