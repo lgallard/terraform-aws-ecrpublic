@@ -304,7 +304,6 @@ No resources.
 | <a name="input_enable_object_example"></a> [enable\_object\_example](#input\_enable\_object\_example) | Whether to enable the object-based configuration example | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | Environment name (e.g., dev, staging, production) | `string` | `"production"` | no |
 | <a name="input_project_name"></a> [project\_name](#input\_project\_name) | Project name for resource tagging and organization | `string` | `"microservices-platform"` | no |
-| <a name="input_registry_alias"></a> [registry\_alias](#input\_registry\_alias) | ECR Public registry alias for repository URIs | `string` | `"myorganization"` | no |
 
 ## Outputs
 
@@ -313,6 +312,7 @@ No resources.
 | <a name="output_api_server_repository_uri"></a> [api\_server\_repository\_uri](#output\_api\_server\_repository\_uri) | URI of the API server repository |
 | <a name="output_docker_pull_commands"></a> [docker\_pull\_commands](#output\_docker\_pull\_commands) | Docker pull commands for all repositories |
 | <a name="output_frontend_repository_uri"></a> [frontend\_repository\_uri](#output\_frontend\_repository\_uri) | URI of the frontend repository |
+| <a name="output_gallery_urls"></a> [gallery\_urls](#output\_gallery\_urls) | ECR Public Gallery URLs for all repositories |
 | <a name="output_object_repositories"></a> [object\_repositories](#output\_object\_repositories) | Repository information for object-based configuration example |
 | <a name="output_registry_ids"></a> [registry\_ids](#output\_registry\_ids) | Map of repository names to their registry IDs |
 | <a name="output_repositories"></a> [repositories](#output\_repositories) | Complete repository information for all created repositories |
