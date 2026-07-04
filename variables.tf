@@ -4,13 +4,13 @@ variable "repository_name" {
   type        = string
 
   validation {
-    condition     = can(regex("^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$", var.repository_name))
-    error_message = "Repository name must start and end with an alphanumeric character and can only contain lowercase letters, numbers, hyphens, underscores, and periods."
+    condition     = can(regex("^(?:[a-z0-9]+(?:[._-][a-z0-9]+)*/)*[a-z0-9]+(?:[._-][a-z0-9]+)*$", var.repository_name))
+    error_message = "Repository name must use lowercase letters and numbers, may include separators '.', '_', '-', and '/', and each path segment must start and end with an alphanumeric character."
   }
 
   validation {
-    condition     = length(var.repository_name) >= 2 && length(var.repository_name) <= 256
-    error_message = "Repository name must be between 2 and 256 characters long."
+    condition     = length(var.repository_name) >= 2 && length(var.repository_name) <= 205
+    error_message = "Repository name must be between 2 and 205 characters long."
   }
 
   validation {
@@ -24,6 +24,56 @@ variable "catalog_data" {
   description = "Catalog data configuration for the repository."
   type        = any
   default     = {}
+
+  validation {
+    condition = can(keys(var.catalog_data)) && alltrue([
+      for key in keys(var.catalog_data) :
+      contains(["about_text", "architectures", "description", "logo_image_blob", "operating_systems", "usage_text"], key)
+    ])
+    error_message = "Catalog data supports only these keys: about_text, architectures, description, logo_image_blob, operating_systems, usage_text."
+  }
+
+  validation {
+    condition     = !can(var.catalog_data.description) || try(var.catalog_data.description == null || length(var.catalog_data.description) <= 1024, false)
+    error_message = "Catalog data description must be 1024 characters or less."
+  }
+
+  validation {
+    condition     = !can(var.catalog_data.about_text) || try(var.catalog_data.about_text == null || length(var.catalog_data.about_text) <= 25600, false)
+    error_message = "Catalog data about_text must be 25600 characters or less."
+  }
+
+  validation {
+    condition     = !can(var.catalog_data.usage_text) || try(var.catalog_data.usage_text == null || length(var.catalog_data.usage_text) <= 25600, false)
+    error_message = "Catalog data usage_text must be 25600 characters or less."
+  }
+
+  validation {
+    condition     = !can(var.catalog_data.logo_image_blob) || try(var.catalog_data.logo_image_blob == null || (can(regex("^[A-Za-z0-9+/]*={0,2}$", var.catalog_data.logo_image_blob)) && length(var.catalog_data.logo_image_blob) <= 682668), false)
+    error_message = "Catalog data logo_image_blob must be base64-encoded and represent at most 512000 bytes."
+  }
+
+  validation {
+    condition = !can(var.catalog_data.architectures) || try(var.catalog_data.architectures == null || (
+      length(var.catalog_data.architectures) <= 50 &&
+      alltrue([
+        for arch in var.catalog_data.architectures :
+        contains(["ARM", "ARM 64", "x86", "x86-64"], arch)
+      ])
+    ), false)
+    error_message = "Catalog data architectures must contain at most 50 supported values: ARM, ARM 64, x86, x86-64."
+  }
+
+  validation {
+    condition = !can(var.catalog_data.operating_systems) || try(var.catalog_data.operating_systems == null || (
+      length(var.catalog_data.operating_systems) <= 50 &&
+      alltrue([
+        for os in var.catalog_data.operating_systems :
+        contains(["Linux", "Windows"], os)
+      ])
+    ), false)
+    error_message = "Catalog data operating_systems must contain at most 50 supported values: Linux, Windows."
+  }
 }
 
 variable "catalog_data_about_text" {
@@ -37,8 +87,8 @@ variable "catalog_data_about_text" {
   }
 
   validation {
-    condition     = var.catalog_data_about_text == null || try(length(var.catalog_data_about_text) <= 16384, true)
-    error_message = "About text must be 16384 characters or less for ECR Public Gallery."
+    condition     = var.catalog_data_about_text == null || try(length(var.catalog_data_about_text) <= 25600, true)
+    error_message = "About text must be 25600 characters or less for ECR Public Gallery."
   }
 
   validation {
@@ -53,11 +103,11 @@ variable "catalog_data_architectures" {
   default     = []
 
   validation {
-    condition = length(var.catalog_data_architectures) == 0 || alltrue([
+    condition = length(var.catalog_data_architectures) <= 50 && (length(var.catalog_data_architectures) == 0 || alltrue([
       for arch in var.catalog_data_architectures :
       contains(["ARM", "ARM 64", "x86", "x86-64"], arch)
-    ])
-    error_message = "Architectures must be one of: ARM, ARM 64, x86, x86-64."
+    ]))
+    error_message = "Architectures must contain at most 50 supported values: ARM, ARM 64, x86, x86-64."
   }
 }
 
@@ -67,8 +117,8 @@ variable "catalog_data_description" {
   default     = null
 
   validation {
-    condition     = var.catalog_data_description == null || try(length(var.catalog_data_description) <= 256, true)
-    error_message = "Description must be 256 characters or less for ECR Public Gallery visibility."
+    condition     = var.catalog_data_description == null || try(length(var.catalog_data_description) <= 1024, true)
+    error_message = "Description must be 1024 characters or less for ECR Public Gallery visibility."
   }
 
   validation {
@@ -83,13 +133,13 @@ variable "catalog_data_logo_image_blob" {
   default     = null
 
   validation {
-    condition     = var.catalog_data_logo_image_blob == null || can(base64decode(var.catalog_data_logo_image_blob))
-    error_message = "Logo image blob must be valid base64-encoded data."
+    condition     = var.catalog_data_logo_image_blob == null || can(regex("^[A-Za-z0-9+/]*={0,2}$", var.catalog_data_logo_image_blob))
+    error_message = "Logo image blob must be base64-encoded data."
   }
 
   validation {
-    condition     = var.catalog_data_logo_image_blob == null || try(length(var.catalog_data_logo_image_blob) <= 2097152, true)
-    error_message = "Logo image must be under 2MB when base64-encoded to prevent resource exhaustion."
+    condition     = var.catalog_data_logo_image_blob == null || try(length(var.catalog_data_logo_image_blob) <= 682668, true)
+    error_message = "Logo image must represent at most 512000 bytes when base64-encoded."
   }
 }
 
@@ -99,11 +149,11 @@ variable "catalog_data_operating_systems" {
   default     = []
 
   validation {
-    condition = length(var.catalog_data_operating_systems) == 0 || alltrue([
+    condition = length(var.catalog_data_operating_systems) <= 50 && (length(var.catalog_data_operating_systems) == 0 || alltrue([
       for os in var.catalog_data_operating_systems :
       contains(["Linux", "Windows"], os)
-    ])
-    error_message = "Operating systems must be one of: Linux, Windows."
+    ]))
+    error_message = "Operating systems must contain at most 50 supported values: Linux, Windows."
   }
 }
 
@@ -118,8 +168,8 @@ variable "catalog_data_usage_text" {
   }
 
   validation {
-    condition     = var.catalog_data_usage_text == null || try(length(var.catalog_data_usage_text) <= 10240, true)
-    error_message = "Usage text must be 10240 characters or less for ECR Public Gallery."
+    condition     = var.catalog_data_usage_text == null || try(length(var.catalog_data_usage_text) <= 25600, true)
+    error_message = "Usage text must be 25600 characters or less for ECR Public Gallery."
   }
 
   validation {
@@ -183,4 +233,17 @@ variable "tags" {
   description = "A map of tags to assign to the resource."
   type        = map(string)
   default     = {}
+
+  validation {
+    condition     = length(var.tags) <= 200
+    error_message = "At most 200 tags can be assigned to an ECR Public repository."
+  }
+
+  validation {
+    condition = alltrue([
+      for key, value in var.tags :
+      length(key) >= 1 && length(key) <= 128 && length(value) <= 256
+    ])
+    error_message = "Tag keys must be 1-128 characters and tag values must be 256 characters or less."
+  }
 }
