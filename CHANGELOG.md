@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.2](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.13.1...0.13.2) (2026-07-04)
+
+
+### Bug Fixes
+
+* release Terraform refactors as patches ([#67](https://github.com/lgallard/terraform-aws-ecrpublic/issues/67)) ([6e1dc0f](https://github.com/lgallard/terraform-aws-ecrpublic/commit/6e1dc0f399fb287038bf873555c2de783d9d8f49))
+
 ## [0.13.1](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.13.0...0.13.1) (2025-12-28)
 
 
