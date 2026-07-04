@@ -54,8 +54,8 @@ variable "catalog_data" {
   }
 
   validation {
-    condition     = !can(var.catalog_data.logo_image_blob) || try(var.catalog_data.logo_image_blob == null || (can(base64decode(var.catalog_data.logo_image_blob)) && length(var.catalog_data.logo_image_blob) <= 512000), false)
-    error_message = "Catalog data logo_image_blob must be valid base64 and 512000 characters or less."
+    condition     = !can(var.catalog_data.logo_image_blob) || try(var.catalog_data.logo_image_blob == null || (can(regex("^[A-Za-z0-9+/]*={0,2}$", var.catalog_data.logo_image_blob)) && length(var.catalog_data.logo_image_blob) <= 682668), false)
+    error_message = "Catalog data logo_image_blob must be base64-encoded and represent at most 512000 bytes."
   }
 
   validation {
@@ -138,13 +138,13 @@ variable "catalog_data_logo_image_blob" {
   default     = null
 
   validation {
-    condition     = var.catalog_data_logo_image_blob == null || can(base64decode(var.catalog_data_logo_image_blob))
-    error_message = "Logo image blob must be valid base64-encoded data."
+    condition     = var.catalog_data_logo_image_blob == null || can(regex("^[A-Za-z0-9+/]*={0,2}$", var.catalog_data_logo_image_blob))
+    error_message = "Logo image blob must be base64-encoded data."
   }
 
   validation {
-    condition     = var.catalog_data_logo_image_blob == null || try(length(var.catalog_data_logo_image_blob) <= 512000, true)
-    error_message = "Logo image must be 512000 characters or less when base64-encoded."
+    condition     = var.catalog_data_logo_image_blob == null || try(length(var.catalog_data_logo_image_blob) <= 682668, true)
+    error_message = "Logo image must represent at most 512000 bytes when base64-encoded."
   }
 }
 
