@@ -36,6 +36,11 @@ jobs:
           exit 0
         fi
 
+        if [[ "${{ github.event_name }}" == "workflow_call" ]]; then
+          echo "skip_security=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
         if [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
           echo "skip_security=false" >> $GITHUB_OUTPUT
           exit 0
@@ -411,7 +416,15 @@ jobs:
         echo "- Repository names should follow lowercase conventions" >> $GITHUB_STEP_SUMMARY
         echo "- All repositories must be created in **us-east-1** region" >> $GITHUB_STEP_SUMMARY
 
-        if [[ "${{ needs.security-scan.result }}" != "success" || "${{ needs.security-scan-examples.result }}" != "success" || "${{ needs.public-content-audit.result }}" != "success" ]]; then
+        security_scan_result="${{ needs.security-scan.result }}"
+        security_examples_result="${{ needs.security-scan-examples.result }}"
+        public_content_audit_result="${{ needs.public-content-audit.result }}"
+
+        is_ok() {
+          [[ "$1" == "success" || "$1" == "skipped" ]]
+        }
+
+        if ! is_ok "$security_scan_result" || ! is_ok "$security_examples_result" || ! is_ok "$public_content_audit_result"; then
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "❌ Some security checks failed. Please review the logs and address issues before merging." >> $GITHUB_STEP_SUMMARY
           exit 1

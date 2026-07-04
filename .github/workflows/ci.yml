@@ -18,11 +18,15 @@ on:
         default: true
         type: boolean
 
+permissions: {}
+
 jobs:
   # Primary validation workflow
   validate:
     name: Validate
     uses: ./.github/workflows/validate.yml
+    permissions:
+      contents: read
 
   # Security scanning workflow
   security:
@@ -39,6 +43,8 @@ jobs:
     name: Quick Tests
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout
@@ -68,6 +74,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_integration_tests == 'true')
     needs: [validate]
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout
