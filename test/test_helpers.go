@@ -34,11 +34,20 @@ func generateMinimalCatalogData(repositoryName string) map[string]interface{} {
 	// Note: repositoryName validation is handled by the calling function via ensureSafeTestExecution
 	return map[string]interface{}{
 		"description": "Test container",
-		"about_text":  "# Test\nBasic test container.",
-		"usage_text":  fmt.Sprintf("# Usage\n```bash\ndocker pull public.ecr.aws/registry/%s:latest\n```", repositoryName),
+		"about_text":  hclVarString("# Test\nBasic test container."),
+		"usage_text":  hclVarString(fmt.Sprintf("# Usage\n```bash\ndocker pull public.ecr.aws/registry/%s:latest\n```", repositoryName)),
 		"architectures": []string{"x86-64"},
 		"operating_systems": []string{"Linux"},
 	}
+}
+
+// hclVarString escapes strings embedded in object-typed Terraform -var values.
+// Terratest renders map variables as HCL object expressions; raw newlines inside
+// object string values make Terraform parse the generated -var argument as an
+// invalid multi-line string. Keeping \n as an HCL escape preserves the intended
+// catalog text while keeping the generated object expression valid.
+func hclVarString(value string) string {
+	return strings.ReplaceAll(value, "\n", "\\n")
 }
 
 // generateMinimalVariableCatalogData creates minimal catalog data using individual variables

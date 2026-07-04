@@ -227,8 +227,8 @@ func TestTerraformECRPublicCompleteConfiguration(t *testing.T) {
 			"repository_name": repositoryName,
 			"catalog_data": map[string]interface{}{
 				"description":       "Complete test repository",
-				"about_text":       "# Complete Test\nTest repository.",
-				"usage_text":       "# Usage\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n```",
+				"about_text":       hclVarString("# Complete Test\nTest repository."),
+				"usage_text":       hclVarString("# Usage\n```bash\ndocker pull public.ecr.aws/registry/" + repositoryName + ":latest\n```"),
 				"architectures":     []string{"x86-64", "ARM", "ARM 64"},
 				"operating_systems": []string{"Linux"},
 			},

@@ -35,14 +35,14 @@ func TestECRPublicGalleryOptimization(t *testing.T) {
 					if err != nil {
 						t.Fatalf("Failed to load test data: %v", err)
 					}
-					return data
+					return hclVarString(data)
 				}(),
 				"usage_text": func() string {
 					data, err := loadTestData("gallery_optimization_usage.md", repositoryName)
 					if err != nil {
 						t.Fatalf("Failed to load test data: %v", err)
 					}
-					return data
+					return hclVarString(data)
 				}(),
 				"architectures":     []string{"x86-64", "ARM 64"},
 				"operating_systems": []string{"Linux"},
@@ -128,7 +128,7 @@ func TestECRPublicGalleryContentGuidelines(t *testing.T) {
 			"repository_name": repositoryName,
 			"catalog_data": map[string]interface{}{
 				"description": "Enterprise Java application server with Spring Boot, security hardening, and production monitoring",
-				"about_text": `# Enterprise Java Application Server
+				"about_text": hclVarString(`# Enterprise Java Application Server
 
 ## Overview
 
@@ -174,13 +174,13 @@ This image follows enterprise architecture patterns:
 - **Maven/Gradle**: Build tool support
 - **PostgreSQL/MySQL**: Database connectivity
 - **Redis**: Caching and session management
-- **Kafka**: Event streaming support`,
+- **Kafka**: Event streaming support`),
 				"usage_text":        func() string {
 					data, err := loadTestData("spring_boot_usage.md", repositoryName)
 					if err != nil {
 						t.Fatalf("Failed to load test data: %v", err)
 					}
-					return data
+					return hclVarString(data)
 				}(),
 				"architectures":     []string{"x86-64", "ARM 64"},
 				"operating_systems": []string{"Linux"},
