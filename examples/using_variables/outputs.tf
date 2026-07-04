@@ -8,9 +8,24 @@ output "repository_url" {
   value       = module.public-ecr.repository_url
 }
 
+output "arn" {
+  description = "Full ARN of the repository"
+  value       = module.public-ecr.arn
+}
+
 output "repository_arn" {
   description = "Full ARN of the repository"
   value       = module.public-ecr.repository_arn
+}
+
+output "repository_uri" {
+  description = "The URI of the repository"
+  value       = module.public-ecr.repository_uri
+}
+
+output "id" {
+  description = "The registry ID where the repository was created"
+  value       = module.public-ecr.id
 }
 
 output "registry_id" {
