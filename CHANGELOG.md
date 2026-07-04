@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.13.3...0.14.0) (2026-07-04)
+
+
+### Features
+
+* align validation with ECR Public constraints ([#74](https://github.com/lgallard/terraform-aws-ecrpublic/issues/74)) ([c1a3cc2](https://github.com/lgallard/terraform-aws-ecrpublic/commit/c1a3cc26ab9a49fb321e599412e41299ddf79ff1))
+
 ## [0.13.3](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.13.2...0.13.3) (2026-07-04)
 
 
