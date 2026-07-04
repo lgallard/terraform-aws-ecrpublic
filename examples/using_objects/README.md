@@ -1,26 +1,44 @@
 # Using objects example
 
-```
-module "public-ecr" {
+This example creates one ECR Public repository and configures gallery catalog data through the `catalog_data` object.
 
+## Copy/paste usage
+
+Use this Registry source address in consumer configurations:
+
+```hcl
+provider "aws" {
+  region = "us-east-1"
+}
+
+module "public-ecr" {
   source = "lgallard/ecrpublic/aws"
 
   repository_name = "lgallard-public-repo"
 
   catalog_data = {
     about_text        = "# Public repo\nPut your description here using Markdown format"
-    architectures     = ["Linux"]
+    architectures     = ["x86-64"]
     description       = "Description"
-    logo_image_blob   = filebase64("image.png")
-    operating_systems = ["ARM"]
-    usage_text        = "# Usage\n How to use you image goes here. Use Markdown format"
+    operating_systems = ["Linux"]
+    usage_text        = "# Usage\nHow to use your image goes here. Use Markdown format."
   }
 }
 ```
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+
+## Local example notes
+
+The live Terraform example in this directory keeps `source = "../.."` so CI validates the checked-out module. It also includes an optional `image.png` logo file and safely reads it only when present.
+
+<!-- BEGIN_TF_DOCS -->
+
+
 ## Requirements
 
-No requirements.
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.2, < 2.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0, < 7.0 |
 
 ## Providers
 
@@ -43,4 +61,5 @@ No inputs.
 ## Outputs
 
 No outputs.
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+
+<!-- END_TF_DOCS -->

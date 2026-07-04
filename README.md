@@ -1,443 +1,128 @@
 ![Terraform](https://lgallardo.com/images/terraform.jpg)
 # terraform-aws-ecrpublic
-Terraform module to create a Public [AWS ECR](https://aws.amazon.com/ecr) to share images in the [ECR Public Gallery](https://gallery.ecr.aws).
 
-## Usage
-You can use this module to create a public ECR registry using objects definition, or using the variables approach:
+Terraform module to create and manage public [Amazon ECR Public](https://aws.amazon.com/ecr/) repositories for sharing container images in the [ECR Public Gallery](https://gallery.ecr.aws/).
 
-Check the [examples](examples/) for the **using objects**, **using variables**, and **multiple repositories** snippets.
+## Terraform Registry compatibility
 
-### Using Objects example
-This example creates an public ECR registry:
+This repository follows Terraform Registry module expectations:
 
-```
+- The GitHub repository is named `terraform-aws-ecrpublic` using the `terraform-<PROVIDER>-<NAME>` pattern.
+- Root module files live at the repository root: `main.tf`, `variables.tf`, `outputs.tf`, and `versions.tf`.
+- Reusable examples live under [`examples/`](examples/) and their documentation shows copy/paste usage with the public registry source address `lgallard/ecrpublic/aws`.
+- Inputs and outputs are generated with `terraform-docs` in this README and in example READMEs.
+- This repository uses Release Please to publish semantic version tags.
+
+ECR Public repositories and authorization tokens are managed through `us-east-1`; configure the AWS provider for `us-east-1` when using this module.
+
+## Complete example
+
+The [`examples/using_variables`](examples/using_variables/) directory is the complete minimal example for Terraform Registry users. Its live Terraform files use `source = "../.."` so local validation and CI test the checked-out module. The copy/paste snippet below uses the public Registry source address.
+
+```hcl
+provider "aws" {
+  region = "us-east-1"
+}
+
 module "public-ecr" {
+  source = "lgallard/ecrpublic/aws"
 
+  repository_name = "my-public-repo"
+
+  catalog_data_description       = "Public container image"
+  catalog_data_about_text        = "# My Public Repository\n\nContainer image published to ECR Public."
+  catalog_data_usage_text        = "# Usage\n\ndocker pull public.ecr.aws/my-registry/my-public-repo:latest"
+  catalog_data_architectures     = ["x86-64"]
+  catalog_data_operating_systems = ["Linux"]
+}
+```
+
+## Examples
+
+| Example | Purpose |
+|---|---|
+| [`using_variables`](examples/using_variables/) | Complete minimal example using individual catalog-data variables. |
+| [`using_objects`](examples/using_objects/) | Configure catalog data through the `catalog_data` object. |
+| [`with_repository_policy`](examples/with_repository_policy/) | Attach an ECR Public repository policy for push access. |
+| [`with_auth_token`](examples/with_auth_token/) | Retrieve an ECR Public authorization token for Docker login and push workflows. |
+| [`multiple_repositories`](examples/multiple_repositories/) | Create multiple repositories with module-level `for_each`. |
+
+## Basic usage
+
+### Object-based catalog data
+
+```hcl
+provider "aws" {
+  region = "us-east-1"
+}
+
+module "public-ecr" {
   source = "lgallard/ecrpublic/aws"
 
   repository_name = "lgallard-public-repo"
 
   catalog_data = {
     about_text        = "# Public repo\nPut your description here using Markdown format"
-    architectures     = ["ARM", "x86-64"]
+    architectures     = ["x86-64"]
     description       = "Description"
-    logo_image_blob   = filebase64("image.png")
     operating_systems = ["Linux"]
-    usage_text        = "# Usage\n How to use you image goes here. Use Markdown format"
+    usage_text        = "# Usage\nHow to use your image goes here. Use Markdown format."
   }
 }
 ```
 
-### Using variables
-This example creates an public ECR registry using variables
+### Variable-based catalog data
 
-```
+```hcl
+provider "aws" {
+  region = "us-east-1"
+}
+
 module "public-ecr" {
-
   source = "lgallard/ecrpublic/aws"
 
   repository_name = "lgallard-public-repo"
 
   catalog_data_about_text        = "# Public repo\nPut your description here using Markdown format"
-  catalog_data_architectures     = ["ARM", "x86-64"]
+  catalog_data_architectures     = ["x86-64"]
   catalog_data_description       = "Description"
-  catalog_data_logo_image_blob   = filebase64("image.png")
   catalog_data_operating_systems = ["Linux"]
-  catalog_data_usage_text        = "# Usage\n How to use you image goes here. Use Markdown format"
-
-}
-
-```
-
-### Multiple Repositories
-
-You can create multiple ECR Public repositories using Terraform's native `for_each` capability at the module level:
-
-```hcl
-locals {
-  repositories = {
-    "frontend" = {
-      description       = "Frontend application container"
-      architectures     = ["x86-64", "ARM 64"]
-      operating_systems = ["Linux"]
-    }
-    "backend" = {
-      description       = "Backend API container"
-      architectures     = ["x86-64"]
-      operating_systems = ["Linux"]
-    }
-    "worker" = {
-      description       = "Background worker container"
-      architectures     = ["x86-64"]
-      operating_systems = ["Linux"]
-    }
-  }
-}
-
-module "public-ecr" {
-  source   = "lgallard/ecrpublic/aws"
-  for_each = local.repositories
-
-  repository_name                = each.key
-  catalog_data_description       = each.value.description
-  catalog_data_architectures     = each.value.architectures
-  catalog_data_operating_systems = each.value.operating_systems
-
-  # Shared configuration
-  catalog_data_about_text = "# ${title(each.key)} Application\n\nContainer image for the ${each.key} component."
-
-  tags = {
-    Environment = "production"
-    Service     = each.key
-    ManagedBy   = "terraform"
-  }
-}
-
-# Access individual repository outputs
-output "frontend_repository_uri" {
-  value = module.public-ecr["frontend"].repository_uri
+  catalog_data_usage_text        = "# Usage\nHow to use your image goes here. Use Markdown format."
 }
 ```
 
-For comprehensive examples and patterns, see [examples/multiple_repositories](examples/multiple_repositories/).
+## Authorization tokens for image push
 
-## Authorization Tokens for Image Push
+ECR Public repositories require authentication tokens for programmatic operations like pushing container images. The `aws_ecrpublic_authorization_token` data source provides credentials for CI/CD integration.
 
-ECR Public repositories require authentication tokens for programmatic operations like pushing container images. The `aws_ecrpublic_authorization_token` data source provides the necessary credentials for CI/CD integration.
+Important notes:
 
-### Important Notes
-
-- **Regional Constraint**: Authorization tokens must be retrieved from `us-east-1` region (same as ECR Public repositories)
-- **Token Expiration**: Authorization tokens expire after 12 hours and should be refreshed for long-running processes
-- **CI/CD Integration**: Essential for automated image pushing in GitHub Actions, Jenkins, and other CI/CD systems
-
-### Using Authorization Tokens
-
-```hcl
-# Authorization token for ECR Public authentication
-data "aws_ecrpublic_authorization_token" "token" {}
-
-module "public-ecr" {
-  source = "lgallard/ecrpublic/aws"
-
-  repository_name = "my-application"
-
-  catalog_data = {
-    description       = "My application container"
-    architectures     = ["x86-64"]
-    operating_systems = ["Linux"]
-  }
-}
-
-# Outputs for CI/CD integration
-output "repository_uri" {
-  value = module.public-ecr.repository_uri
-}
-
-output "authorization_token" {
-  value     = data.aws_ecrpublic_authorization_token.token.authorization_token
-  sensitive = true
-}
-```
-
-### Docker Authentication Commands
+- Authorization tokens must be retrieved from `us-east-1`.
+- Authorization tokens expire after 12 hours.
+- See [`examples/with_auth_token`](examples/with_auth_token/) for a complete token example.
 
 ```bash
-# Method 1: Using AWS CLI (Recommended)
 aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-
-# Method 2: Using Terraform output
-echo "$AUTHORIZATION_TOKEN" | docker login --username AWS --password-stdin public.ecr.aws
-
-# Push your image
-docker tag my-app:latest <repository_uri>:latest
-docker push <repository_uri>:latest
 ```
-
-### GitHub Actions Integration
-
-```yaml
-name: Push to ECR Public
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Login to ECR Public
-        run: |
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-
-      - name: Build and push
-        run: |
-          docker build -t ${{ secrets.ECR_REPOSITORY_URI }}:latest .
-          docker push ${{ secrets.ECR_REPOSITORY_URI }}:latest
-```
-
-For a complete example with authorization token integration, see [examples/with_auth_token](examples/with_auth_token/).
 
 ## Testing
 
-This module includes comprehensive automated testing using [Terratest](https://github.com/gruntwork-io/terratest) with specialized ECR Public testing patterns following CLAUDE.md guidelines.
+This module includes static Terraform checks and Go/Terratest integration tests.
 
 ### Prerequisites
 
-- **Terraform** >= 1.0
-- **Go** >= 1.21
-- **AWS credentials** with ECR Public permissions
-- **AWS Region**: Tests must run in `us-east-1` (ECR Public constraint)
+- **Terraform** >= 1.2, < 2.0
+- **Go** >= 1.21 for Go/Terratest suites
+- **AWS credentials** with ECR Public permissions for integration tests
+- **AWS Region**: use `us-east-1` for ECR Public operations
 
-### Quick Start
+### Quick start
 
 ```bash
-# Run static tests only (no AWS resources)
-make test
-
-# Run basic integration tests (creates AWS resources)
-make test-integration
-
-# Run all comprehensive tests
-make test-all
+make test              # Static checks only, no AWS resources
+make test-integration  # Integration tests that create AWS resources
+make test-all          # Full local test suite
 ```
-
-### Available Test Suites
-
-#### Static Tests (No AWS Resources)
-```bash
-make test-static          # Format and validation checks
-make fmt-check           # Terraform formatting validation
-make validate            # Configuration validation
-```
-
-#### Integration Tests (Creates AWS Resources)
-```bash
-make test-integration    # Basic ECR Public repository tests
-make test-catalog        # Catalog data validation tests
-make test-gallery        # Public gallery compliance tests
-make test-timeouts       # Timeout configuration tests
-make test-validation     # Variable validation tests
-```
-
-#### Comprehensive Testing
-```bash
-make check              # All static checks
-make check-all          # All checks including integration tests
-make test-all           # Complete integration test suite
-```
-
-### Test Coverage
-
-#### 1. Static Tests (`terraform_basic_test.go`)
-- **Format validation**: Terraform file formatting
-- **Configuration validation**: Syntax and structure validation
-- **Example validation**: Both `using_objects` and `using_variables` examples
-- **Fast execution**: Completes in seconds, no AWS resources
-
-#### 2. Integration Tests (`terraform_integration_test.go`)
-- **Basic repository creation**: Core ECR Public functionality
-- **Variable-based catalog data**: Individual variable approach testing
-- **Object-based catalog data**: Object configuration approach testing
-- **Timeout configuration**: Custom timeout settings validation
-- **Complete configuration**: Comprehensive feature testing
-
-#### 3. Catalog Data Tests (`terraform_catalog_data_test.go`)
-- **Content validation**: ECR Public Gallery guidelines compliance
-- **Minimal configuration**: Tests minimal valid catalog data
-- **Comprehensive configuration**: Tests all catalog data fields
-- **Multi-architecture support**: Architecture and OS tagging validation
-- **Markdown formatting**: Rich markdown content validation
-
-#### 4. Public Gallery Tests (`terraform_public_gallery_test.go`)
-- **Gallery optimization**: Discoverability and searchability features
-- **Content guidelines**: ECR Public Gallery content standards
-- **Regional constraints**: us-east-1 region requirement validation
-- **Public accessibility**: Global public access validation
-
-### ECR Public Specific Testing
-
-This module follows ECR Public-specific testing patterns:
-
-#### Regional Constraints
-All tests enforce ECR Public's `us-east-1` regional constraint:
-```go
-awsRegion := "us-east-1"
-EnvVars: map[string]string{
-    "AWS_DEFAULT_REGION": awsRegion,
-}
-```
-
-#### Catalog Data Validation
-Tests validate ECR Public Gallery content guidelines:
-- **Description length**: Maximum 256 characters
-- **Architecture validation**: `x86-64`, `ARM`, `ARM 64`
-- **Operating system validation**: `Linux`, `Windows`
-- **Markdown formatting**: Proper markdown in about and usage text
-- **Public content standards**: Appropriate content for public repositories
-
-#### Repository Naming
-Tests use unique repository names to avoid conflicts:
-```go
-uniqueID := strings.ToLower(random.UniqueId())
-repositoryName := fmt.Sprintf("terratest-prefix-%s", uniqueID)
-```
-
-### Test Validation Patterns
-
-The test suite includes specialized validation helpers:
-
-#### Repository Validation
-- `validateECRPublicRepository()`: Basic repository creation validation
-- `validateBasicOutputs()`: Module outputs validation
-- `validateCatalogDataOutputs()`: Catalog data specific validation
-- `validateAllOutputs()`: Comprehensive output validation
-
-#### Gallery Validation
-- `validatePublicGalleryOptimization()`: Gallery discoverability checks
-- `validatePublicGallerySearchability()`: Search optimization validation
-- `validatePublicGalleryContentGuidelines()`: Content compliance validation
-- `validateRegionalConstraints()`: Regional constraint validation
-
-### Example Test Execution
-
-#### Basic Repository Test
-```bash
-cd test
-go test -v -run TestTerraformECRPublicBasic -timeout 30m
-```
-
-#### Catalog Data Validation
-```bash
-cd test
-go test -v -run TestECRPublicCatalogDataValidation -timeout 45m
-```
-
-#### Complete Test Suite
-```bash
-cd test
-go test -v -timeout 30m -parallel 2
-```
-
-### AWS Resources and Costs
-
-⚠️ **Important**: Integration tests create real AWS resources:
-
-- **ECR Public Repositories**: Created and configured with catalog data
-- **Region Requirement**: All resources created in `us-east-1` only
-- **Cost**: ECR Public repositories are free to create and maintain
-- **Cleanup**: Automatic cleanup with `terraform destroy` after each test
-
-### Required AWS Permissions
-
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ecr-public:CreateRepository",
-                "ecr-public:DeleteRepository",
-                "ecr-public:DescribeRepositories",
-                "ecr-public:GetRepositoryCatalogData",
-                "ecr-public:PutRepositoryCatalogData"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-```
-
-### Continuous Integration
-
-GitHub Actions workflow provides automated testing:
-
-- **Static Tests**: Run on all pull requests (no AWS resources)
-- **Integration Tests**: Run on main branch or manual dispatch
-- **Parallel Execution**: Optimized for faster feedback
-- **Comprehensive Coverage**: All test suites included
-
-### Troubleshooting
-
-#### Common Issues
-
-**Region Errors**
-```
-Error: ECR Public repositories can only be created in us-east-1
-Solution: Set AWS_DEFAULT_REGION=us-east-1
-```
-
-**Permission Errors**
-```
-Error: Access denied for ECR Public operations
-Solution: Verify AWS credentials have ECR Public permissions
-```
-
-**Repository Conflicts**
-```
-Error: Repository already exists
-Solution: Tests use unique IDs, manual cleanup may be needed
-```
-
-For detailed testing instructions and troubleshooting, see [test/README.md](test/README.md).
-
-## Requirements
-
-No requirements.
-
-## Providers
-
-| Name | Version |
-|------|---------|
-| aws | n/a |
-
-## Modules
-
-No Modules.
-
-## Resources
-
-| Name |
-|------|
-| [aws_ecrpublic_repository](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecrpublic_repository) |
-
-## Inputs
-
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| catalog\_data | Catalog data configuration for the repository. | `any` | `{}` | no |
-| catalog\_data\_about\_text | A detailed description of the contents of the repository. It is publicly visible in the Amazon ECR Public Gallery. The text must be in markdown format. | `string` | `null` | no |
-| catalog\_data\_architectures | The system architecture that the images in the repository are compatible with. On the Amazon ECR Public Gallery, the following supported architectures will appear as badges on the repository and are used as search filters: `Linux`, `Windows`. | `list(string)` | `[]` | no |
-| catalog\_data\_description | A short description of the contents of the repository. This text appears in both the image details and also when searching for repositories on the Amazon ECR Public Gallery. | `string` | `null` | no |
-| catalog\_data\_logo\_image\_blob | The base64-encoded repository logo payload. (Only visible for verified accounts) Note that drift detection is disabled for this attribute. | `string` | `null` | no |
-| catalog\_data\_operating\_systems | The operating systems that the images in the repository are compatible with. On the Amazon ECR Public Gallery, the following supported operating systems will appear as badges on the repository and are used as search filters. 'ARM', 'ARM 64', 'x86', 'x86-64'. | `list(string)` | `null` | no |
-| catalog\_data\_usage\_text | Detailed information on how to use the contents of the repository. It is publicly visible in the Amazon ECR Public Gallery. The usage text provides context, support information, and additional usage details for users of the repository. The text must be in markdown format. | `string` | `null` | no |
-| repository\_name | Name of the repository. | `string` | n/a | yes |
-| timeouts | Timeouts map. | `map` | `{}` | no |
-| timeouts\_delete | How long to wait for a repository to be deleted. | `string` | `null` | no |
-
-## Outputs
-
-| Name | Description |
-|------|-------------|
-| arn | Full ARN of the repository |
-| id | The repository name. |
-| registry\_id | The registry ID where the repository was created. |
-| repository\_uri | The URI of the repository. |
-
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
-README.md updated successfully
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 
 <!-- BEGIN_TF_DOCS -->
 

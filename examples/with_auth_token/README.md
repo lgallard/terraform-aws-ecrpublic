@@ -1,173 +1,70 @@
-# ECR Public with Authorization Token Example
+# ECR Public with authorization token example
 
-This example demonstrates how to create an ECR Public repository alongside retrieving authorization tokens for programmatic image pushing.
+This example creates an ECR Public repository and retrieves an authorization token for Docker login and push workflows.
 
-## Overview
+## Copy/paste usage
 
-The `aws_ecrpublic_authorization_token` data source provides authentication tokens needed to push images to ECR Public repositories. This example shows how to use this data source with the ECR Public module for complete CI/CD integration.
-
-## Key Features
-
-- ECR Public repository creation with catalog data
-- Authorization token retrieval for Docker authentication
-- Pre-configured outputs for Docker login commands
-- Regional constraint handling (us-east-1 requirement)
-
-## Important Notes
-
-### Regional Constraints
-
-- **ECR Public repositories must be created in `us-east-1` region**
-- **Authorization tokens must also be retrieved from `us-east-1`**
-- This is an AWS service limitation for ECR Public Gallery
-
-### Token Expiration
-
-- Authorization tokens expire after 12 hours
-- Tokens should be refreshed for long-running CI/CD processes
-- Use the `token_expires_at` output to monitor expiration
-
-## Usage
-
-### Basic Example
+Use this Registry source address in consumer configurations:
 
 ```hcl
-module "public-ecr-with-auth" {
-  source = "lgallard/ecrpublic/aws//examples/with_auth_token"
+provider "aws" {
+  region = "us-east-1"
+}
+
+# Authorization tokens for ECR Public must be requested from us-east-1.
+data "aws_ecrpublic_authorization_token" "token" {}
+
+module "public-ecr" {
+  source = "lgallard/ecrpublic/aws"
 
   repository_name = "my-application"
 
-  catalog_data_description = "My public application container"
-  catalog_data_about_text = <<-EOT
-    # My Application
+  catalog_data = {
+    description       = "My application container"
+    about_text        = "# My Application\n\nProduction-ready container for my public application."
+    usage_text        = "# Usage\n\ndocker pull public.ecr.aws/your-registry/my-application:latest"
+    architectures     = ["x86-64"]
+    operating_systems = ["Linux"]
+  }
+}
 
-    Production-ready container for my public application.
-  EOT
+output "repository_uri" {
+  value = module.public-ecr.repository_uri
+}
+
+output "authorization_token" {
+  value     = data.aws_ecrpublic_authorization_token.token.authorization_token
+  sensitive = true
 }
 ```
 
-### CI/CD Integration
+## Docker login
 
 ```bash
-# Retrieve outputs
-REPO_URI=$(terraform output -raw repository_uri)
-AUTH_TOKEN=$(terraform output -raw authorization_token)
-
-# Docker login using authorization token
-echo "$AUTH_TOKEN" | docker login --username AWS --password-stdin public.ecr.aws
-
-# Or use AWS CLI (recommended)
 aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-
-# Tag and push image
-docker tag my-app:latest $REPO_URI:latest
-docker push $REPO_URI:latest
 ```
 
-### GitHub Actions Example
+## Notes
 
-```yaml
-name: Push to ECR Public
-on:
-  push:
-    branches: [main]
+- Authorization tokens expire after 12 hours.
+- Treat token outputs as sensitive and avoid logging them.
+- The live Terraform example in this directory keeps `source = "../.."` so CI validates the checked-out module.
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+<!-- BEGIN_TF_DOCS -->
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
 
-      - name: Login to ECR Public
-        run: |
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-
-      - name: Build and push
-        run: |
-          docker build -t ${{ secrets.ECR_REPOSITORY_URI }}:latest .
-          docker push ${{ secrets.ECR_REPOSITORY_URI }}:latest
-```
-
-## Inputs
-
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| repository_name | Name of the repository | `string` | `"my-app"` | no |
-| catalog_data_description | Public description visible in ECR Public Gallery | `string` | `"My application container"` | no |
-| catalog_data_about_text | Public about text in markdown format | `string` | See variables.tf | no |
-| catalog_data_usage_text | Public usage instructions in markdown format | `string` | See variables.tf | no |
-| catalog_data_architectures | Supported architectures for container images | `list(string)` | `["x86-64"]` | no |
-| catalog_data_operating_systems | Supported operating systems for container images | `list(string)` | `["Linux"]` | no |
-
-## Outputs
-
-| Name | Description | Sensitive |
-|------|-------------|:---------:|
-| repository_name | Name of the repository | no |
-| repository_uri | The URI of the repository | no |
-| repository_url | The URL of the repository | no |
-| repository_arn | Full ARN of the repository | no |
-| registry_id | The registry ID where the repository was created | no |
-| authorization_token | The authorization token (base64 encoded) | yes |
-| token_expires_at | Token expiration timestamp | no |
-| docker_login_command | Docker login command for ECR Public | no |
-| aws_cli_login_command | AWS CLI command to login to ECR Public | no |
-
-## Security Considerations
-
-1. **Token Sensitivity**: Authorization tokens are marked as sensitive and should not be logged
-2. **Token Expiration**: Implement token refresh logic for long-running processes
-3. **Regional Compliance**: Ensure all ECR Public operations use us-east-1 region
-4. **Access Control**: Limit ECR Public permissions to necessary operations only
-
-## Common Issues
-
-### "Repository does not exist" Error
-Ensure the repository is created before attempting authentication operations.
-
-### "No authorization token" Error
-Verify that:
-- AWS credentials are properly configured
-- The AWS provider is configured for us-east-1 region
-- IAM permissions include `ecr-public:GetAuthorizationToken`
-
-### Token Expiration
-Authorization tokens expire after 12 hours. Implement refresh logic:
-
-```bash
-# Check token expiration
-TOKEN_EXPIRES=$(terraform output -raw token_expires_at)
-CURRENT_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-
-if [[ "$CURRENT_TIME" > "$TOKEN_EXPIRES" ]]; then
-  echo "Token expired, refreshing..."
-  terraform refresh
-fi
-```
-
-## References
-
-- [aws_ecrpublic_authorization_token](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ecrpublic_authorization_token)
-- [ECR Public User Guide](https://docs.aws.amazon.com/AmazonECR/latest/public/)
-- [Docker CLI Reference](https://docs.docker.com/engine/reference/commandline/login/)
-
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
-No requirements.
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.2, < 2.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0, < 7.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.27.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.53.0 |
 
 ## Modules
 
@@ -205,4 +102,5 @@ No requirements.
 | <a name="output_repository_uri"></a> [repository\_uri](#output\_repository\_uri) | The URI of the repository |
 | <a name="output_repository_url"></a> [repository\_url](#output\_repository\_url) | The URL of the repository |
 | <a name="output_token_expires_at"></a> [token\_expires\_at](#output\_token\_expires\_at) | Token expiration timestamp |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+
+<!-- END_TF_DOCS -->
