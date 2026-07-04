@@ -44,10 +44,16 @@ func generateMinimalCatalogData(repositoryName string) map[string]interface{} {
 // hclVarString escapes strings embedded in object-typed Terraform -var values.
 // Terratest renders map variables as HCL object expressions; raw newlines inside
 // object string values make Terraform parse the generated -var argument as an
-// invalid multi-line string. Keeping \n as an HCL escape preserves the intended
-// catalog text while keeping the generated object expression valid.
+// invalid multi-line string. Escaping HCL quoted-string metacharacters preserves
+// the intended catalog text while keeping the generated object expression valid.
 func hclVarString(value string) string {
-	return strings.ReplaceAll(value, "\n", "\\n")
+	value = strings.ReplaceAll(value, "\\", "\\\\")
+	value = strings.ReplaceAll(value, "\"", "\\\"")
+	value = strings.ReplaceAll(value, "\n", "\\n")
+	value = strings.ReplaceAll(value, "\t", "\\t")
+	value = strings.ReplaceAll(value, "${", "$${")
+	value = strings.ReplaceAll(value, "%{", "%%{")
+	return value
 }
 
 // generateMinimalVariableCatalogData creates minimal catalog data using individual variables
