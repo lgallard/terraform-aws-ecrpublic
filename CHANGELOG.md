@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.13.3](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.13.2...0.13.3) (2026-07-04)
+
+
+### Bug Fixes
+
+* escape catalog data test variables ([#71](https://github.com/lgallard/terraform-aws-ecrpublic/issues/71)) ([958ae01](https://github.com/lgallard/terraform-aws-ecrpublic/commit/958ae01b8aaf4e29f66b362582297469c548f610))
+* expose expected outputs in variables example ([#73](https://github.com/lgallard/terraform-aws-ecrpublic/issues/73)) ([4af72ce](https://github.com/lgallard/terraform-aws-ecrpublic/commit/4af72ce198739ae29e1646738687f255d2b155d0))
+* repair CI security workflow wiring ([#69](https://github.com/lgallard/terraform-aws-ecrpublic/issues/69)) ([2adfef2](https://github.com/lgallard/terraform-aws-ecrpublic/commit/2adfef2f84023c66e9a306391041034555db043e))
+
 ## [0.13.2](https://github.com/lgallard/terraform-aws-ecrpublic/compare/0.13.1...0.13.2) (2026-07-04)
 
 
