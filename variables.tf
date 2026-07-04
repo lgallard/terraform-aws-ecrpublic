@@ -5,7 +5,7 @@ variable "repository_name" {
 
   validation {
     condition     = can(regex("^(?:[a-z0-9]+(?:[._-][a-z0-9]+)*/)*[a-z0-9]+(?:[._-][a-z0-9]+)*$", var.repository_name))
-    error_message = "Repository name must follow the ECR Public pattern '(?:[a-z0-9]+(?:[._-][a-z0-9]+)*/)*[a-z0-9]+(?:[._-][a-z0-9]+)*'."
+    error_message = "Repository name must use lowercase letters and numbers, may include separators '.', '_', '-', and '/', and each path segment must start and end with an alphanumeric character."
   }
 
   validation {
@@ -24,11 +24,6 @@ variable "catalog_data" {
   description = "Catalog data configuration for the repository."
   type        = any
   default     = {}
-
-  validation {
-    condition     = can(keys(var.catalog_data))
-    error_message = "Catalog data must be an object/map."
-  }
 
   validation {
     condition = can(keys(var.catalog_data)) && alltrue([
@@ -63,7 +58,7 @@ variable "catalog_data" {
       length(var.catalog_data.architectures) <= 50 &&
       alltrue([
         for arch in var.catalog_data.architectures :
-        contains(["ARM", "ARM 64", "x86", "x86-64"], arch) && length(arch) >= 1 && length(arch) <= 50
+        contains(["ARM", "ARM 64", "x86", "x86-64"], arch)
       ])
     ), false)
     error_message = "Catalog data architectures must contain at most 50 supported values: ARM, ARM 64, x86, x86-64."
@@ -74,7 +69,7 @@ variable "catalog_data" {
       length(var.catalog_data.operating_systems) <= 50 &&
       alltrue([
         for os in var.catalog_data.operating_systems :
-        contains(["Linux", "Windows"], os) && length(os) >= 1 && length(os) <= 50
+        contains(["Linux", "Windows"], os)
       ])
     ), false)
     error_message = "Catalog data operating_systems must contain at most 50 supported values: Linux, Windows."
@@ -110,7 +105,7 @@ variable "catalog_data_architectures" {
   validation {
     condition = length(var.catalog_data_architectures) <= 50 && (length(var.catalog_data_architectures) == 0 || alltrue([
       for arch in var.catalog_data_architectures :
-      contains(["ARM", "ARM 64", "x86", "x86-64"], arch) && length(arch) >= 1 && length(arch) <= 50
+      contains(["ARM", "ARM 64", "x86", "x86-64"], arch)
     ]))
     error_message = "Architectures must contain at most 50 supported values: ARM, ARM 64, x86, x86-64."
   }
@@ -156,7 +151,7 @@ variable "catalog_data_operating_systems" {
   validation {
     condition = length(var.catalog_data_operating_systems) <= 50 && (length(var.catalog_data_operating_systems) == 0 || alltrue([
       for os in var.catalog_data_operating_systems :
-      contains(["Linux", "Windows"], os) && length(os) >= 1 && length(os) <= 50
+      contains(["Linux", "Windows"], os)
     ]))
     error_message = "Operating systems must contain at most 50 supported values: Linux, Windows."
   }
