@@ -5,9 +5,15 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_call:
   schedule:
     - cron: '0 0 * * 1'  # Weekly on Mondays
   workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
 
 jobs:
   # Check if we should skip security scans for documentation-only changes
@@ -169,6 +175,7 @@ jobs:
     - name: Upload checkov results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v3
       if: always() && hashFiles('checkov-results.sarif') != ''
+      continue-on-error: true
       with:
         sarif_file: checkov-results.sarif
         category: checkov
@@ -176,6 +183,7 @@ jobs:
     - name: Upload tfsec results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v3
       if: always() && hashFiles('tfsec-results.sarif') != ''
+      continue-on-error: true
       with:
         sarif_file: tfsec-results.sarif
         category: tfsec
