@@ -18,23 +18,33 @@ on:
         default: true
         type: boolean
 
+permissions: {}
+
 jobs:
   # Primary validation workflow
   validate:
     name: Validate
     uses: ./.github/workflows/validate.yml
+    permissions:
+      contents: read
 
   # Security scanning workflow
   security:
     name: Security
     uses: ./.github/workflows/security.yml
     if: github.event_name != 'workflow_dispatch' || github.event.inputs.run_security_scans != 'false'
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
 
   # Quick static tests for pull requests
   quick-tests:
     name: Quick Tests
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout
@@ -64,6 +74,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_integration_tests == 'true')
     needs: [validate]
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout
@@ -122,8 +134,19 @@ jobs:
         echo "- **Quick Tests**: Fast static tests for pull request validation" >> $GITHUB_STEP_SUMMARY
         echo "- **Integration Tests**: Real AWS ECR Public repository creation and testing" >> $GITHUB_STEP_SUMMARY
 
-        # Check for failures
-        if [[ "${{ needs.validate.result }}" != "success" || "${{ needs.security.result }}" != "success" || "${{ needs.quick-tests.result }}" != "success" || "${{ needs.integration-tests.result }}" != "success" ]]; then
+        # Check for failures. Some jobs are intentionally skipped depending on
+        # the trigger (for example PR-only quick tests or optional integration
+        # tests), so treat success and skipped as acceptable terminal states.
+        validate_result="${{ needs.validate.result }}"
+        security_result="${{ needs.security.result }}"
+        quick_tests_result="${{ needs.quick-tests.result }}"
+        integration_tests_result="${{ needs.integration-tests.result }}"
+
+        is_ok() {
+          [[ "$1" == "success" || "$1" == "skipped" ]]
+        }
+
+        if ! is_ok "$validate_result" || ! is_ok "$security_result" || ! is_ok "$quick_tests_result" || ! is_ok "$integration_tests_result"; then
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "❌ CI pipeline has failures. Please review the failed workflows." >> $GITHUB_STEP_SUMMARY
           exit 1

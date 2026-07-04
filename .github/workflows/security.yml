@@ -5,9 +5,15 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_call:
   schedule:
     - cron: '0 0 * * 1'  # Weekly on Mondays
   workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
 
 jobs:
   # Check if we should skip security scans for documentation-only changes
@@ -26,6 +32,11 @@ jobs:
       id: check
       run: |
         if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || [[ "${{ github.event_name }}" == "schedule" ]]; then
+          echo "skip_security=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        if [[ "${{ github.event_name }}" == "workflow_call" ]]; then
           echo "skip_security=false" >> $GITHUB_OUTPUT
           exit 0
         fi
@@ -169,6 +180,7 @@ jobs:
     - name: Upload checkov results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v3
       if: always() && hashFiles('checkov-results.sarif') != ''
+      continue-on-error: true
       with:
         sarif_file: checkov-results.sarif
         category: checkov
@@ -176,6 +188,7 @@ jobs:
     - name: Upload tfsec results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v3
       if: always() && hashFiles('tfsec-results.sarif') != ''
+      continue-on-error: true
       with:
         sarif_file: tfsec-results.sarif
         category: tfsec
@@ -403,7 +416,15 @@ jobs:
         echo "- Repository names should follow lowercase conventions" >> $GITHUB_STEP_SUMMARY
         echo "- All repositories must be created in **us-east-1** region" >> $GITHUB_STEP_SUMMARY
 
-        if [[ "${{ needs.security-scan.result }}" != "success" || "${{ needs.security-scan-examples.result }}" != "success" || "${{ needs.public-content-audit.result }}" != "success" ]]; then
+        security_scan_result="${{ needs.security-scan.result }}"
+        security_examples_result="${{ needs.security-scan-examples.result }}"
+        public_content_audit_result="${{ needs.public-content-audit.result }}"
+
+        is_ok() {
+          [[ "$1" == "success" || "$1" == "skipped" ]]
+        }
+
+        if ! is_ok "$security_scan_result" || ! is_ok "$security_examples_result" || ! is_ok "$public_content_audit_result"; then
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "❌ Some security checks failed. Please review the logs and address issues before merging." >> $GITHUB_STEP_SUMMARY
           exit 1
