@@ -13,7 +13,6 @@ import (
 
 // TestTerraformECRPublicBasic tests basic ECR Public repository creation
 func TestTerraformECRPublicBasic(t *testing.T) {
-	t.Parallel()
 
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
@@ -56,7 +55,6 @@ func TestTerraformECRPublicBasic(t *testing.T) {
 
 // TestTerraformECRPublicWithVariableCatalogData tests ECR Public repository with catalog data using variables
 func TestTerraformECRPublicWithVariableCatalogData(t *testing.T) {
-	t.Parallel()
 
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
@@ -95,7 +93,6 @@ func TestTerraformECRPublicWithVariableCatalogData(t *testing.T) {
 
 // TestTerraformECRPublicWithObjectCatalogData tests ECR Public repository with catalog data using objects
 func TestTerraformECRPublicWithObjectCatalogData(t *testing.T) {
-	t.Parallel()
 
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
@@ -132,7 +129,6 @@ func TestTerraformECRPublicWithObjectCatalogData(t *testing.T) {
 
 // TestTerraformECRPublicWithTimeouts tests ECR Public repository with custom timeouts
 func TestTerraformECRPublicWithTimeouts(t *testing.T) {
-	t.Parallel()
 
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
@@ -170,7 +166,6 @@ func TestTerraformECRPublicWithTimeouts(t *testing.T) {
 
 // TestTerraformECRPublicVariableValidation tests variable validation rules
 func TestTerraformECRPublicVariableValidation(t *testing.T) {
-	t.Parallel()
 
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
@@ -209,7 +204,6 @@ func TestTerraformECRPublicVariableValidation(t *testing.T) {
 
 // TestTerraformECRPublicCompleteConfiguration tests complete ECR Public configuration
 func TestTerraformECRPublicCompleteConfiguration(t *testing.T) {
-	t.Parallel()
 
 	// Generate a unique repository name to avoid conflicts
 	uniqueID := strings.ToLower(random.UniqueId())
