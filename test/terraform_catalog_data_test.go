@@ -109,7 +109,7 @@ func TestECRPublicComprehensiveCatalogData(t *testing.T) {
 			"repository_name": repositoryName,
 			"catalog_data": map[string]interface{}{
 				"description": "Enterprise-grade application container with comprehensive tooling and security features",
-				"about_text": `# Enterprise Application Container
+				"about_text": hclVarString(`# Enterprise Application Container
 
 ## Overview
 
@@ -152,13 +152,13 @@ This image supports multiple architectures:
 
 - **NIST Guidelines**: Follows NIST container security guidelines
 - **CIS Benchmarks**: Compliant with CIS security benchmarks
-- **OWASP Standards**: Implements OWASP container security practices`,
+- **OWASP Standards**: Implements OWASP container security practices`),
 				"usage_text": func() string {
 					data, err := loadTestData("comprehensive_catalog_usage.md", repositoryName)
 					if err != nil {
 						t.Fatalf("Failed to load test data: %v", err)
 					}
-					return data
+					return hclVarString(data)
 				}(),
 				"architectures":     []string{"x86-64", "ARM", "ARM 64"},
 				"operating_systems": []string{"Linux"},
