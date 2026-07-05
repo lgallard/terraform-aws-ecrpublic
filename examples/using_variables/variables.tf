@@ -37,5 +37,5 @@ variable "catalog_data_operating_systems" {
 variable "catalog_data_usage_text" {
   description = "Detailed information on how to use the contents of the repository"
   type        = string
-  default     = "# Usage\n How to use you image goes here. Use Markdown format"
+  default     = "# Usage\nHow to use your image goes here. Use Markdown format."
 }

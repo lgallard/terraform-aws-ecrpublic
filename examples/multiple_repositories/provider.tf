@@ -1,12 +1,12 @@
 # Provider configuration for multiple repositories example
 
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.2, < 2.0"
 
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 5.0"
+      version = ">= 5.0, < 7.0"
     }
   }
 }

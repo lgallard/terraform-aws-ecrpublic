@@ -10,6 +10,6 @@ module "public-ecr" {
     description       = "Description"
     logo_image_blob   = can(fileexists("${path.module}/image.png")) ? filebase64("${path.module}/image.png") : null
     operating_systems = ["Linux"]
-    usage_text        = "# Usage\n How to use you image goes here. Use Markdown format"
+    usage_text        = "# Usage\nHow to use your image goes here. Use Markdown format."
   }
 }

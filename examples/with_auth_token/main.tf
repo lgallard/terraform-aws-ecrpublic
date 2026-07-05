@@ -1,7 +1,3 @@
-provider "aws" {
-  region = "us-east-1"
-}
-
 # Authorization token for ECR Public
 # Note: Must be used in us-east-1 region
 data "aws_ecrpublic_authorization_token" "token" {}
