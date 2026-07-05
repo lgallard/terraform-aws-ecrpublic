@@ -28,15 +28,27 @@ repos:
         name: Terraform validate
         description: Validates all Terraform configuration files
 
-      - id: terraform_docs
-        name: Terraform docs
-        description: Inserts input and output documentation into README.md using .terraform-docs.yml
-
       - id: terraform_tflint
         name: Terraform lint
         description: Validates all Terraform configuration files with TFLint
         args:
           - --args=--only=terraform_deprecated_lookup
+
+  # Terraform documentation generation for the root module and examples
+  - repo: local
+    hooks:
+      - id: terraform_docs
+        name: Terraform docs
+        description: Updates Terraform docs in the root README and example READMEs
+        language: system
+        pass_filenames: false
+        files: \.tf$
+        entry: >-
+          bash -c 'set -euo pipefail;
+          terraform-docs --config .terraform-docs.yml .;
+          for d in examples/using_objects examples/using_variables examples/with_repository_policy examples/with_auth_token examples/multiple_repositories; do
+            terraform-docs --config .terraform-docs.yml "$d";
+          done'
 
   # Additional quality checks
   - repo: https://github.com/pre-commit/pre-commit-hooks

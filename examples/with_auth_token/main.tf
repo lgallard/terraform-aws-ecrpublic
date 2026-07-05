@@ -1,18 +1,3 @@
-terraform {
-  required_version = ">= 1.2, < 2.0"
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 5.0, < 7.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = "us-east-1"
-}
-
 # Authorization token for ECR Public
 # Note: Must be used in us-east-1 region
 data "aws_ecrpublic_authorization_token" "token" {}
