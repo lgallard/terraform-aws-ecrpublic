@@ -37,7 +37,9 @@ variable "run_docker_login" {
 }
 
 # Token values are not persisted in state or plan files.
-ephemeral "aws_ecrpublic_authorization_token" "token" {}
+ephemeral "aws_ecrpublic_authorization_token" "token" {
+  count = var.run_docker_login ? 1 : 0
+}
 
 module "public-ecr" {
   source = "lgallard/ecrpublic/aws"
@@ -63,8 +65,8 @@ resource "terraform_data" "docker_login" {
     command     = "printf '%s' \"$ECR_PUBLIC_PASSWORD\" | docker login --username \"$ECR_PUBLIC_USERNAME\" --password-stdin public.ecr.aws"
 
     environment = {
-      ECR_PUBLIC_USERNAME = ephemeral.aws_ecrpublic_authorization_token.token.user_name
-      ECR_PUBLIC_PASSWORD = ephemeral.aws_ecrpublic_authorization_token.token.password
+      ECR_PUBLIC_USERNAME = ephemeral.aws_ecrpublic_authorization_token.token[0].user_name
+      ECR_PUBLIC_PASSWORD = ephemeral.aws_ecrpublic_authorization_token.token[0].password
     }
   }
 }
@@ -82,7 +84,7 @@ aws ecr-public get-login-password --region us-east-1 | docker login --username A
 
 - Authorization tokens expire after 12 hours.
 - Do not output token or password values. Ephemeral values cannot be persisted as normal outputs, and outputting credentials would defeat the purpose.
-- The `run_docker_login` variable defaults to `false` so local validation and example applies do not run Docker login unexpectedly.
+- The `run_docker_login` variable defaults to `false` so local validation and example applies do not fetch an authorization token or run Docker login unexpectedly.
 - If you cannot use ephemeral resources, see [`../with_auth_token`](../with_auth_token/) for the legacy data source example and its state-storage caveat.
 - The live Terraform example in this directory keeps `source = "../.."` so CI validates the checked-out module.
 

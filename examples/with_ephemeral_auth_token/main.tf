@@ -1,7 +1,9 @@
 # Ephemeral authorization token for ECR Public.
 # Token values are available during the Terraform operation but are not persisted
 # in Terraform state or plan files.
-ephemeral "aws_ecrpublic_authorization_token" "token" {}
+ephemeral "aws_ecrpublic_authorization_token" "token" {
+  count = var.run_docker_login ? 1 : 0
+}
 
 module "public-ecr" {
   source = "../.."
@@ -30,8 +32,8 @@ resource "terraform_data" "docker_login" {
     command     = "printf '%s' \"$ECR_PUBLIC_PASSWORD\" | docker login --username \"$ECR_PUBLIC_USERNAME\" --password-stdin public.ecr.aws"
 
     environment = {
-      ECR_PUBLIC_USERNAME = ephemeral.aws_ecrpublic_authorization_token.token.user_name
-      ECR_PUBLIC_PASSWORD = ephemeral.aws_ecrpublic_authorization_token.token.password
+      ECR_PUBLIC_USERNAME = ephemeral.aws_ecrpublic_authorization_token.token[0].user_name
+      ECR_PUBLIC_PASSWORD = ephemeral.aws_ecrpublic_authorization_token.token[0].password
     }
   }
 }
