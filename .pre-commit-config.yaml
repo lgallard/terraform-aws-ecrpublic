@@ -15,6 +15,10 @@ repos:
       - id: check-added-large-files
         name: Check for large files
         args: ['--maxkb=1000']
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: check-case-conflict
+        name: Check for case conflicts
 
   # Terraform-specific pre-commit hooks
   - repo: https://github.com/antonbabenko/pre-commit-terraform
@@ -36,7 +40,7 @@ repos:
         name: Terraform lint
         description: Validates all Terraform configuration files with TFLint
         args:
-          - --args=--only=terraform_deprecated_lookup
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
 
   # Terraform documentation generation for the root module and examples
   - repo: local
@@ -53,12 +57,3 @@ repos:
           for d in examples/using_objects examples/using_variables examples/with_repository_policy examples/with_auth_token examples/with_ephemeral_auth_token examples/multiple_repositories; do
             terraform-docs --config .terraform-docs.yml "$d";
           done'
-
-  # Additional quality checks
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
-    hooks:
-      - id: check-merge-conflict
-        name: Check for merge conflicts
-      - id: check-case-conflict
-        name: Check for case conflicts
