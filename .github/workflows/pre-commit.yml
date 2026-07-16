@@ -75,7 +75,8 @@ jobs:
               echo "$CHANGED_FILES"
               pre-commit run --files $CHANGED_FILES
             else
-              echo "No Terraform files changed, skipping pre-commit checks"
+              echo "No Terraform files changed; running all hooks because workflow/config files changed"
+              pre-commit run --all-files
             fi
           fi
 
