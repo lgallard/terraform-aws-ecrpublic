@@ -27,6 +27,10 @@ repos:
       - id: terraform_validate
         name: Terraform validate
         description: Validates all Terraform configuration files
+        # The ephemeral authorization token example intentionally requires Terraform >= 1.10.
+        # CI also runs this hook with Terraform 1.3 for root-module compatibility checks,
+        # so validate the ephemeral example separately with a newer Terraform version.
+        exclude: ^examples/with_ephemeral_auth_token/
 
       - id: terraform_tflint
         name: Terraform lint
