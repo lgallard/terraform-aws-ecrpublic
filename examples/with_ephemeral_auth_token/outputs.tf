@@ -23,11 +23,6 @@ output "registry_id" {
   value       = module.public-ecr.registry_id
 }
 
-output "token_expires_at" {
-  description = "Token expiration timestamp from the legacy data source"
-  value       = data.aws_ecrpublic_authorization_token.token.expires_at
-}
-
 output "aws_cli_login_command" {
   description = "AWS CLI command to login to ECR Public without storing Terraform token values"
   value       = "aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws"

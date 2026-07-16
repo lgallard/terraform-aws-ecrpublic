@@ -44,7 +44,8 @@ module "public-ecr" {
 | [`using_variables`](examples/using_variables/) | Complete minimal example using individual catalog-data variables. |
 | [`using_objects`](examples/using_objects/) | Configure catalog data through the `catalog_data` object. |
 | [`with_repository_policy`](examples/with_repository_policy/) | Attach an ECR Public repository policy for push access. |
-| [`with_auth_token`](examples/with_auth_token/) | Retrieve an ECR Public authorization token for Docker login and push workflows. |
+| [`with_ephemeral_auth_token`](examples/with_ephemeral_auth_token/) | Preferred short-lived authorization token example that avoids storing credentials in state. |
+| [`with_auth_token`](examples/with_auth_token/) | Legacy data source authorization token example with state-storage caveats. |
 | [`multiple_repositories`](examples/multiple_repositories/) | Create multiple repositories with module-level `for_each`. |
 
 ## Basic usage
@@ -93,13 +94,13 @@ module "public-ecr" {
 
 ## Authorization tokens for image push
 
-ECR Public repositories require authentication tokens for programmatic operations like pushing container images. The `aws_ecrpublic_authorization_token` data source provides credentials for CI/CD integration.
+ECR Public repositories require authentication tokens for programmatic operations like pushing container images. Authorization tokens must be retrieved from `us-east-1` and expire after 12 hours.
 
-Important notes:
+Prefer one of these patterns:
 
-- Authorization tokens must be retrieved from `us-east-1`.
-- Authorization tokens expire after 12 hours.
-- See [`examples/with_auth_token`](examples/with_auth_token/) for a complete token example.
+- **AWS CLI login** for CI/CD jobs and local pushes. This avoids putting token values in Terraform configuration, plan files, or state.
+- **Ephemeral `aws_ecrpublic_authorization_token` resource** when a Terraform operation must pass short-lived registry credentials to a provider or provisioner. See [`examples/with_ephemeral_auth_token`](examples/with_ephemeral_auth_token/). Requires Terraform/OpenTofu `>= 1.10` and AWS provider `>= 6.31`.
+- **Legacy `data.aws_ecrpublic_authorization_token` data source** only for older Terraform compatibility. Data source attributes, including sensitive token/password values, are stored in Terraform state. See [`examples/with_auth_token`](examples/with_auth_token/).
 
 ```bash
 aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
@@ -138,7 +139,7 @@ make test-all          # Full local test suite
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.53.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.55.0 |
 
 ## Modules
 

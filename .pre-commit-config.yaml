@@ -46,7 +46,7 @@ repos:
         entry: >-
           bash -c 'set -euo pipefail;
           terraform-docs --config .terraform-docs.yml .;
-          for d in examples/using_objects examples/using_variables examples/with_repository_policy examples/with_auth_token examples/multiple_repositories; do
+          for d in examples/using_objects examples/using_variables examples/with_repository_policy examples/with_auth_token examples/with_ephemeral_auth_token examples/multiple_repositories; do
             terraform-docs --config .terraform-docs.yml "$d";
           done'
 
