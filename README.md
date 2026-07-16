@@ -17,7 +17,7 @@ ECR Public repositories and authorization tokens are managed through `us-east-1`
 
 ## Complete example
 
-The [`examples/using_variables`](examples/using_variables/) directory is the complete minimal example for Terraform Registry users. Its live Terraform files use `source = "../.."` so local validation and CI test the checked-out module. The copy/paste snippet below uses the public Registry source address.
+The [`examples/using_variables`](examples/using_variables/) directory is the complete minimal example for Terraform Registry users. Its live Terraform files use `source = "../.."` so maintainers can inspect and exercise the checked-out module locally when needed. The copy/paste snippet below uses the public Registry source address.
 
 ```hcl
 provider "aws" {
@@ -106,24 +106,19 @@ Prefer one of these patterns:
 aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 ```
 
-## Testing
+## Validation and maintenance
 
-This module includes static Terraform checks and Go/Terratest integration tests.
+This repository intentionally does not maintain repo-owned automated validation jobs or legacy test suites. Changes are reviewed through maintainer inspection, AI-assisted/codebot review, and user reports.
 
-### Prerequisites
-
-- **Terraform** >= 1.2, < 2.0
-- **Go** >= 1.21 for Go/Terratest suites
-- **AWS credentials** with ECR Public permissions for integration tests
-- **AWS Region**: use `us-east-1` for ECR Public operations
-
-### Quick start
+When validating changes locally, use the smallest direct Terraform commands that match the change. For example:
 
 ```bash
-make test              # Static checks only, no AWS resources
-make test-integration  # Integration tests that create AWS resources
-make test-all          # Full local test suite
+terraform fmt -check -recursive
+terraform init -backend=false -input=false
+terraform validate
 ```
+
+ECR Public resources and authorization tokens are managed through `us-east-1`. Do not run Terraform operations that create, update, or delete AWS resources unless you explicitly intend to manage live infrastructure.
 
 <!-- BEGIN_TF_DOCS -->
 

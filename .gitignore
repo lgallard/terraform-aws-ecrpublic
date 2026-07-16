@@ -8,10 +8,6 @@
 terraform.tfvars
 *.auto.tfvars
 
-# Go
-test/vendor/
-test/go.sum
-
 # IDE
 .vscode/
 .idea/
