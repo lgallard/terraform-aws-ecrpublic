@@ -1,0 +1,59 @@
+# Pre-commit configuration for terraform-aws-ecrpublic
+# https://pre-commit.com/hooks.html
+
+repos:
+  # Generic pre-commit hooks for file formatting
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+        name: Remove trailing whitespace
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: check-yaml
+        name: Check YAML syntax
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: check-case-conflict
+        name: Check for case conflicts
+
+  # Terraform-specific pre-commit hooks
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.83.5
+    hooks:
+      - id: terraform_fmt
+        name: Terraform format
+        description: Rewrites all Terraform configuration files to a canonical format
+
+      - id: terraform_validate
+        name: Terraform validate
+        description: Validates all Terraform configuration files
+        # The ephemeral authorization token example intentionally requires Terraform >= 1.10.
+        # CI also runs this hook with Terraform 1.3 for root-module compatibility checks,
+        # so validate the ephemeral example separately with a newer Terraform version.
+        exclude: ^examples/with_ephemeral_auth_token/
+
+      - id: terraform_tflint
+        name: Terraform lint
+        description: Validates all Terraform configuration files with TFLint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+
+  # Terraform documentation generation for the root module and examples
+  - repo: local
+    hooks:
+      - id: terraform_docs
+        name: Terraform docs
+        description: Updates Terraform docs in the root README and example READMEs
+        language: system
+        pass_filenames: false
+        files: \.tf$
+        entry: >-
+          bash -c 'set -euo pipefail;
+          terraform-docs --config .terraform-docs.yml .;
+          for d in examples/using_objects examples/using_variables examples/with_repository_policy examples/with_auth_token examples/with_ephemeral_auth_token examples/multiple_repositories; do
+            terraform-docs --config .terraform-docs.yml "$d";
+          done'

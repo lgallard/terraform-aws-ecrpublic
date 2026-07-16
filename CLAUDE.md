@@ -13,10 +13,11 @@ ECR Public is a global public gallery service with API operations handled throug
 - `outputs.tf` - module outputs
 - `versions.tf` - Terraform and AWS provider constraints
 - `examples/` - registry-facing examples
+- `.github/workflows/pre-commit.yml` - lightweight Terraform formatting/validation/linting checks
 - `.github/workflows/release-please.yml` - semantic version/tag automation
 - `.github/workflows/claude*.yml` - AI/codebot automation
 
-This repo intentionally no longer contains repo-owned automated validation tooling or legacy test suites.
+This repo intentionally keeps pre-commit as the lightweight automated quality gate. It no longer contains the legacy Terratest suite or broader CI/security/test workflow stack.
 
 ## Development rules
 
@@ -32,8 +33,9 @@ This repo intentionally no longer contains repo-owned automated validation tooli
 
 ## Validation approach
 
-The maintainer preference for this repository is lightweight review instead of maintaining repo-owned automated validation tooling. Use:
+The maintainer preference for this repository is lightweight pre-commit plus review instead of maintaining the old Terratest/CI/security workflow stack. Use:
 
+- pre-commit for Terraform formatting, validation, linting, and generated docs
 - direct local Terraform commands for targeted checks when useful
 - AI/codebot review on pull requests
 - maintainer inspection and user reports for behavior validation
@@ -41,6 +43,7 @@ The maintainer preference for this repository is lightweight review instead of m
 Useful local commands when the touched files justify them:
 
 ```bash
+pre-commit run --all-files
 terraform fmt -check -recursive
 terraform init -backend=false -input=false
 terraform validate

@@ -108,11 +108,12 @@ aws ecr-public get-login-password --region us-east-1 | docker login --username A
 
 ## Validation and maintenance
 
-This repository intentionally does not maintain repo-owned automated validation jobs or legacy test suites. Changes are reviewed through maintainer inspection, AI-assisted/codebot review, and user reports.
+This repository keeps lightweight pre-commit checks for Terraform formatting, validation, linting, and generated docs. It intentionally does not maintain the legacy Terratest suite or broader CI/security/test workflow stack. Changes are reviewed through pre-commit, maintainer inspection, AI-assisted/codebot review, and user reports.
 
 When validating changes locally, use the smallest direct Terraform commands that match the change. For example:
 
 ```bash
+pre-commit run --all-files
 terraform fmt -check -recursive
 terraform init -backend=false -input=false
 terraform validate
