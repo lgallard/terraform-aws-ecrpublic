@@ -1,6 +1,10 @@
-# ECR Public with authorization token example
+# ECR Public with legacy authorization token data source example
 
-This example creates an ECR Public repository and retrieves an authorization token for Docker login and push workflows.
+This example creates an ECR Public repository and retrieves an authorization token with the legacy `data.aws_ecrpublic_authorization_token` data source.
+
+Use this example only when you need compatibility with Terraform versions that do not support ephemeral resources. Data source values are persisted in Terraform state, including sensitive attributes such as `authorization_token` and `password`, even if an output is marked `sensitive`.
+
+For Terraform/OpenTofu versions that support ephemeral resources, prefer [`../with_ephemeral_auth_token`](../with_ephemeral_auth_token/) so short-lived registry credentials are not stored in state or plan files.
 
 ## Copy/paste usage
 
@@ -12,6 +16,7 @@ provider "aws" {
 }
 
 # Authorization tokens for ECR Public must be requested from us-east-1.
+# WARNING: Data source values are stored in Terraform state.
 data "aws_ecrpublic_authorization_token" "token" {}
 
 module "public-ecr" {
@@ -32,13 +37,14 @@ output "repository_uri" {
   value = module.public-ecr.repository_uri
 }
 
-output "authorization_token" {
-  value     = data.aws_ecrpublic_authorization_token.token.authorization_token
-  sensitive = true
+output "token_expires_at" {
+  value = data.aws_ecrpublic_authorization_token.token.expires_at
 }
 ```
 
 ## Docker login
+
+Prefer the AWS CLI for Docker login because it avoids persisting token values in Terraform state:
 
 ```bash
 aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
@@ -47,7 +53,8 @@ aws ecr-public get-login-password --region us-east-1 | docker login --username A
 ## Notes
 
 - Authorization tokens expire after 12 hours.
-- Treat token outputs as sensitive and avoid logging them.
+- Do not output `authorization_token`, `password`, or decoded credentials from this example.
+- Sensitive Terraform outputs are still stored in state. Marking an output `sensitive` only hides it from normal CLI display.
 - The live Terraform example in this directory keeps `source = "../.."` so CI validates the checked-out module.
 
 <!-- BEGIN_TF_DOCS -->
@@ -64,7 +71,7 @@ aws ecr-public get-login-password --region us-east-1 | docker login --username A
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.53.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.55.0 |
 
 ## Modules
 
@@ -93,14 +100,12 @@ aws ecr-public get-login-password --region us-east-1 | docker login --username A
 
 | Name | Description |
 |------|-------------|
-| <a name="output_authorization_token"></a> [authorization\_token](#output\_authorization\_token) | The authorization token (base64 encoded) |
-| <a name="output_aws_cli_login_command"></a> [aws\_cli\_login\_command](#output\_aws\_cli\_login\_command) | AWS CLI command to login to ECR Public |
-| <a name="output_docker_login_command"></a> [docker\_login\_command](#output\_docker\_login\_command) | Docker login command for ECR Public (use with authorization\_token output) |
+| <a name="output_aws_cli_login_command"></a> [aws\_cli\_login\_command](#output\_aws\_cli\_login\_command) | AWS CLI command to login to ECR Public without storing Terraform token values |
 | <a name="output_registry_id"></a> [registry\_id](#output\_registry\_id) | The registry ID where the repository was created |
 | <a name="output_repository_arn"></a> [repository\_arn](#output\_repository\_arn) | Full ARN of the repository |
 | <a name="output_repository_name"></a> [repository\_name](#output\_repository\_name) | Name of the repository |
 | <a name="output_repository_uri"></a> [repository\_uri](#output\_repository\_uri) | The URI of the repository |
 | <a name="output_repository_url"></a> [repository\_url](#output\_repository\_url) | The URL of the repository |
-| <a name="output_token_expires_at"></a> [token\_expires\_at](#output\_token\_expires\_at) | Token expiration timestamp |
+| <a name="output_token_expires_at"></a> [token\_expires\_at](#output\_token\_expires\_at) | Token expiration timestamp from the legacy data source |
 
 <!-- END_TF_DOCS -->
