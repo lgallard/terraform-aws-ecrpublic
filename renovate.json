@@ -1,23 +1,37 @@
 {
-  "extends": ["config:base", "docker:enableMajor", ":enableVulnerabilityAlertsWithLabel(security)"],
-  "timezone": "America/New_York",
+  "extends": [
+    "github>lgallard/renovate-config",
+    "docker:enableMajor",
+    ":enableVulnerabilityAlertsWithLabel(security)"
+  ],
   "dependencyDashboard": true,
   "vulnerabilityAlerts": {
     "enabled": true
   },
   "terraform": {
-    "ignoreDeps": ["hashicorp/terraform"]
+    "ignoreDeps": [
+      "hashicorp/terraform"
+    ]
   },
   "packageRules": [
     {
-      "datasources": ["terraform-provider"],
-      "updateTypes": ["major"],
-      "enabled": false
+      "enabled": false,
+      "matchDatasources": [
+        "terraform-provider"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ]
     },
     {
       "groupName": "terraform providers",
-      "datasources": ["terraform-provider"],
-      "updateTypes": ["minor", "patch"]
+      "matchDatasources": [
+        "terraform-provider"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
     }
   ]
 }
