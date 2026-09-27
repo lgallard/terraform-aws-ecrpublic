@@ -24,11 +24,11 @@ data "aws_ecrpublic_images" "selected" {
 }
 
 output "image_digests" {
-  value = [for image in data.aws_ecrpublic_images.selected.images : image.digest if image.digest != null]
+  value = [for image in data.aws_ecrpublic_images.selected.images : image.image_digest if image.image_digest != null]
 }
 
 output "image_tags" {
-  value = distinct(flatten([for image in data.aws_ecrpublic_images.selected.images : image.tags]))
+  value = distinct(flatten([for image in data.aws_ecrpublic_images.selected.images : coalesce(image.image_tags, [])]))
 }
 ```
 
