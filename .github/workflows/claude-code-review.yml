@@ -589,13 +589,14 @@ jobs:
         uses: anthropics/claude-code-action@70a6e5256e9e2366a1ed5c041904a982ba3a328f # v1.0.135
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: "--model claude-sonnet-4-6"
-
-          # Allow Bash permissions for pre-commit hooks and documentation updates
-          allowed_tools: "Bash(pre-commit run --files),Bash(terraform fmt),Bash(terraform validate),Bash(terraform-docs)"
+          # Tool permissions are passed through claude_args for claude-code-action v1.
+          # Keep Bash tool patterns free of spaces; claude-code-action parses
+          # claude_args shell-style, so patterns like Bash(pre-commit run --files)
+          # are split into invalid tool names.
+          claude_args: "--model claude-sonnet-4-6 --allowedTools Task,Read,Grep,Glob,Bash(pre-commit:*),Bash(terraform:*),Bash(terraform-docs:*),mcp__github_comment__*,mcp__github_ci__*"
 
           # Dynamic prompt based on review mode
-          direct_prompt: |
+          prompt: |
             🔄 **COMMIT ANALYSIS CONTEXT**
             - **Commit SHA**: `${{ steps.verify-state.outputs.current_sha }}`
             - **Review ID**: `${{ steps.verify-state.outputs.review_id }}`
