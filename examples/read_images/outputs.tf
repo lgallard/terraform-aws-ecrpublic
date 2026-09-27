@@ -4,7 +4,7 @@ output "image_digests" {
 }
 
 output "image_tags" {
-  description = "Distinct image tags returned by the ECR Public images data source"
+  description = "Deduplicated flat list of all tags across every returned image"
   value       = distinct(flatten([for image in data.aws_ecrpublic_images.selected.images : image.tags]))
 }
 
@@ -21,5 +21,6 @@ output "images" {
       registry_id               = image.registry_id
       repository_name           = image.repository_name
     }
+    if image.digest != null
   ]
 }

@@ -78,7 +78,7 @@ No modules.
 | Name | Description |
 |------|-------------|
 | <a name="output_image_digests"></a> [image\_digests](#output\_image\_digests) | Image digests returned by the ECR Public images data source |
-| <a name="output_image_tags"></a> [image\_tags](#output\_image\_tags) | Distinct image tags returned by the ECR Public images data source |
+| <a name="output_image_tags"></a> [image\_tags](#output\_image\_tags) | Deduplicated flat list of all tags across every returned image |
 | <a name="output_images"></a> [images](#output\_images) | Image metadata returned by the ECR Public images data source |
 
 <!-- END_TF_DOCS -->

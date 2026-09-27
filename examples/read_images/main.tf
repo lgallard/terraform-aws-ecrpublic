@@ -7,10 +7,11 @@ data "aws_ecrpublic_images" "selected" {
 
   dynamic "image_ids" {
     for_each = var.image_ids
+    iterator = image_id
 
     content {
-      image_tag    = image_ids.value.image_tag
-      image_digest = image_ids.value.image_digest
+      image_tag    = image_id.value.image_tag
+      image_digest = image_id.value.image_digest
     }
   }
 }
