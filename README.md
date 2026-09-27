@@ -136,7 +136,7 @@ ECR Public resources and authorization tokens are managed through `us-east-1`. D
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.0, < 7.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.66.0 |
 
 ## Modules
 
