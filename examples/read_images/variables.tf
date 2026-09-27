@@ -17,4 +17,11 @@ variable "image_ids" {
     image_digest = optional(string)
   }))
   default = []
+
+  validation {
+    condition = alltrue([
+      for image_id in var.image_ids : image_id.image_tag != null || image_id.image_digest != null
+    ])
+    error_message = "Each image_ids entry must specify at least one of image_tag or image_digest."
+  }
 }
