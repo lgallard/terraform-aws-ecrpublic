@@ -38,7 +38,7 @@ jobs:
   # Handle workflow_dispatch by creating a comment to trigger Claude
   dispatch-trigger:
     if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       pull-requests: write
@@ -135,7 +135,7 @@ jobs:
         contains(github.event.pull_request.title, '[auto-review]')
       ))
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15  # Prevent runaway executions
     permissions:
       contents: read
